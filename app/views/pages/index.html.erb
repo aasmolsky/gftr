@@ -1,0 +1,38 @@
+<% if current_user %>
+  <div>
+    <h2>Send Query</h2>
+    <%= form_with url: query_path, method: :post, local: true do |form| %>
+      <div class="form-group">
+        <%= form.label :query, "Your Query:" %>
+        <%= form.text_area :query, placeholder: "Enter your query...", rows: 4 %>
+      </div>
+      <%= form.submit "Send", class: "btn" %>
+    <% end %>
+
+    <div class="requests-history">
+      <h3>Recent Requests</h3>
+      <% if @requests.any? %>
+        <% @requests.each do |req| %>
+          <div class="request-item">
+            <div class="request-query">
+              <strong>Query:</strong><br>
+              <%= truncate(req.query, length: 100) %>
+            </div>
+            <div>
+              <strong>Response:</strong><br>
+              <%= truncate(req.response, length: 200) %>
+            </div>
+            <small><%= time_ago_in_words(req.created_at) %> ago</small>
+          </div>
+        <% end %>
+      <% else %>
+        <p>No requests yet.</p>
+      <% end %>
+    </div>
+  </div>
+<% else %>
+  <div style="text-align: center;">
+    <p>Please log in with Google to continue</p>
+    <%= button_to "Login with Google", "/auth/google_oauth2", method: :post, class: "btn", data: { turbo: false }, style: "display: inline-block; margin-top: 20px;" %>
+  </div>
+<% end %>

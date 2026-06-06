@@ -1,0 +1,55 @@
+# Environment
+.env
+.env.*
+!.env.example
+
+# Bundler
+/.bundle
+/vendor/bundle
+
+# Rails
+/log/*
+!/log/.keep
+/tmp/*
+!/tmp/.keep
+/tmp/pids/*
+!/tmp/pids/.keep
+/storage/*
+!/storage/.keep
+/tmp/storage/*
+!/tmp/storage/
+!/tmp/storage/.keep
+
+# Assets
+/public/assets
+/public/packs
+/public/packs-test
+
+# Credentials
+/config/master.key
+/config/credentials.yml.enc
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# OS
+Thumbs.db
+.DS_Store
+
+# Testing
+/coverage/
+.rspec
+
+# Database
+*.sqlite3
+*.sqlite3-wal
+*.sqlite3-journal
+
+# Node modules (if using JS)
+node_modules/
+yarn-error.log
