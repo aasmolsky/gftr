@@ -10,17 +10,31 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_06_06_000002) do
+ActiveRecord::Schema[8.1].define(version: 2026_06_07_000001) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
   create_table "requests", force: :cascade do |t|
+    t.text "analysis_error"
+    t.string "analysis_status", default: "pending", null: false
+    t.datetime "analyzed_at"
     t.datetime "created_at", null: false
+    t.jsonb "frai_result_json", default: {}, null: false
+    t.string "language", limit: 10, default: "en", null: false
+    t.string "llm_model"
+    t.string "llm_provider"
+    t.jsonb "place_data_json", default: {}, null: false
+    t.string "place_id"
     t.text "query", null: false
     t.text "response", null: false
+    t.jsonb "serp_reviews_json", default: [], null: false
     t.datetime "updated_at", null: false
     t.bigint "user_id", null: false
+    t.index ["analysis_status"], name: "index_requests_on_analysis_status"
+    t.index ["analyzed_at"], name: "index_requests_on_analyzed_at"
     t.index ["created_at"], name: "index_requests_on_created_at"
+    t.index ["place_id", "language"], name: "index_requests_on_place_id_and_language"
+    t.index ["place_id"], name: "index_requests_on_place_id"
     t.index ["user_id"], name: "index_requests_on_user_id"
   end
 

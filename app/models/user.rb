@@ -1,3 +1,19 @@
+# == Schema Information
+#
+# Table name: users
+#
+#  id         :integer          not null, primary key
+#  google_id  :string           not null
+#  email      :string           not null
+#  name       :string
+#  created_at :datetime         not null
+#  updated_at :datetime         not null
+#
+# Indexes
+#
+#  index_users_on_google_id  (google_id) UNIQUE
+#
+
 class User < ApplicationRecord
   has_many :requests, dependent: :destroy
 

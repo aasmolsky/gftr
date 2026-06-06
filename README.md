@@ -21,6 +21,7 @@ A simple Rails web application that allows users to submit queries through a for
    ```
    GOOGLE_CLIENT_ID=your_google_client_id
    GOOGLE_CLIENT_SECRET=your_google_client_secret
+   SERP_API_KEY=your_serp_api_key
    EXTERNAL_SERVICE_URL=https://your-external-service.com/api
    ALLOWED_OMNIAUTH_HOST=localhost:3000
    ```

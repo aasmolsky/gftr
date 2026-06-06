@@ -8,9 +8,14 @@ gem "puma", ">= 5.0"
 gem "omniauth-google-oauth2", "~> 1.2"
 gem "omniauth-rails_csrf_protection", "~> 2.0"
 
+# SerpApi for Google Reviews
+gem "serpapi", "~> 1.0"
+
 # Environment variables
 gem "dotenv-rails"
 gem "importmap-rails"
 
 gem "bootsnap", require: false
 
+gem "annotate", "~> 2.6", group: :development
+gem "frai", path: "/Users/aliaksandr.smolski/projects/frai"
