@@ -86,8 +86,7 @@ class PagesController < ApplicationController
     end
 
     current_user.requests.create(request_attrs.merge(response: response_text))
-
-    redirect_to root_path, notice: "Request processed successfully"
+    redirect_to root_path
   end
 
   private

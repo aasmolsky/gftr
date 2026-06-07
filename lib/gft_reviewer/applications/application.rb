@@ -13,13 +13,12 @@ module GftReviewer
   #     max_groups: 5
   #   )
   class Application < Frai::Application
-    def call(place_id:, language:, place_data:, reviews:, max_groups: 5)
-      AnalyzeReviewsTask.call(
+    def call(place_id:, language:, place_data:, reviews:)
+      ReviewAnalysisPipeline.call(
         place_id:   place_id,
         language:   language,
         place_data: place_data,
-        reviews:    reviews,
-        max_groups: max_groups
+        reviews:    reviews
       )
     end
   end

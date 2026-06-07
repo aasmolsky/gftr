@@ -1,7 +1,14 @@
 <% if current_user %>
+  <%# ── Loading overlay ── %>
+  <div id="loading-overlay" style="display:none; position:fixed; inset:0; background:rgba(15,23,42,0.6); z-index:9999; align-items:center; justify-content:center; flex-direction:column; gap:1rem;">
+    <div style="width:48px; height:48px; border:4px solid #fff; border-top-color:transparent; border-radius:50%; animation:spin 0.8s linear infinite;"></div>
+    <div style="color:#fff; font-size:1rem; font-weight:600; letter-spacing:0.03em;">Analyzing reviews…</div>
+  </div>
+  <style>@keyframes spin { to { transform: rotate(360deg); } }</style>
+
   <div class="card">
     <h2 style="font-size: 1.25rem; font-weight: 600; margin-bottom: 1.5rem;">Please enter Place ID</h2>
-    <%= form_with url: query_path, method: :post, local: true do |form| %>
+    <%= form_with url: query_path, method: :post, local: true, html: { id: "analyze-form" } do |form| %>
       <div class="form-group">
         <%= form.text_area :query, placeholder: "Enter Google Maps Place ID here...", rows: 1 %>
         <div style="margin-top: 0.5rem; font-size: 0.75rem; color: var(--text-muted); line-height: 1.4;">
@@ -42,7 +49,6 @@
       <% verdict_color = assessment == "likely_fake" ? "#dc2626" : assessment == "likely_real" ? "#059669" : "#b45309" %>
       <% verdict_label = assessment == "likely_fake" ? "🔴 Likely Fake" : assessment == "likely_real" ? "🟢 Likely Real" : "🟡 Mixed" %>
       <% rc = (analysis[:rating_categories] || {}).with_indifferent_access %>
-      <% ca = (analysis[:category_analysis] || {}).with_indifferent_access %>
 
       <%# ── 1. HEADER ── %>
       <div style="margin-bottom: 1.5rem;">
@@ -60,61 +66,59 @@
             Analyzed <strong><%= analysis[:analyzed_ratings_count] || 0 %></strong> —
             <span style="color:#dc2626;"><strong><%= analysis[:fake_count] || 0 %></strong> fake</span>,
             <span style="color:#059669;"><strong><%= analysis[:real_count] || 0 %></strong> real</span>
+            <% if (analysis[:uncertain_count] || 0).to_i > 0 %>
+              , <span style="color:#b45309;"><strong><%= analysis[:uncertain_count] %></strong> uncertain</span>
+            <% end %>
           </span>
         </div>
       </div>
 
-      <%# ── 2. SUSPICIOUS PATTERNS ── %>
-      <% if analysis[:suspicious_patterns].present? || analysis[:fake_signals].present? %>
+      <%# ── 2. SIGNAL SUMMARY ── %>
+      <% signal_summary = (analysis[:signal_summary] || {}).with_indifferent_access %>
+      <% if signal_summary.present? %>
+        <% fake_keys = %w[THIN_ACCOUNT_0 THIN_ACCOUNT_1 SHORT_TEXT_EXTREME SHORT_TEXT BURST_AFTER_NEGATIVE FIVE_STAR_EMPTY SURNAME_REPEAT GENERIC_TEXT SUSPICIOUS_NEGATIVE MARKETING_TONE EMOJI_SPAM TEMPLATE_CLONE] %>
         <div style="background:#fff7ed; border:1px solid #fed7aa; border-radius:0.75rem; padding:1rem; margin-bottom:1rem;">
-          <% if analysis[:suspicious_patterns].present? %>
-            <div style="font-size:0.78rem; font-weight:700; color:#9a3412; text-transform:uppercase; letter-spacing:0.05em; margin-bottom:0.35rem;">Suspicious patterns</div>
-            <ul style="margin:0 0 0.6rem; padding-left:1.1rem; color:#7c2d12; font-size:0.875rem;">
-              <% Array(analysis[:suspicious_patterns]).each { |p| %><li><%= p %></li><% } %>
-            </ul>
-          <% end %>
-          <% if analysis[:fake_signals].present? %>
-            <div style="font-size:0.78rem; font-weight:700; color:#9a3412; text-transform:uppercase; letter-spacing:0.05em; margin-bottom:0.35rem;">Fake signals</div>
-            <ul style="margin:0; padding-left:1.1rem; color:#7c2d12; font-size:0.875rem;">
-              <% Array(analysis[:fake_signals]).each { |s| %><li><%= s %></li><% } %>
-            </ul>
-          <% end %>
+          <div style="font-size:0.78rem; font-weight:700; color:#9a3412; text-transform:uppercase; letter-spacing:0.05em; margin-bottom:0.6rem;">Top fraud signals detected</div>
+          <div style="display:flex; flex-wrap:wrap; gap:0.4rem;">
+            <% signal_summary.sort_by { |_, v| -v.to_i }.first(10).each do |key, count| %>
+              <% is_fake = fake_keys.include?(key.to_s) %>
+              <span style="padding:0.2rem 0.6rem; border-radius:9999px; font-size:0.78rem; font-weight:600; background:<%= is_fake ? '#fee2e2' : '#dcfce7' %>; color:<%= is_fake ? '#991b1b' : '#166534' %>;">
+                <%= key %> · <%= count %>
+              </span>
+            <% end %>
+          </div>
         </div>
       <% end %>
 
-      <%# ── 3. CATEGORY BLOCKS: Positive → Neutral → Negative ── %>
+      <%# ── 3. CATEGORY BLOCKS ── %>
       <% [
         { key: :positive, label: "Positive",  stars: "4–5 ★", bg: "#f0fdf4", border: "#86efac", hdr: "#166534", txt: "#14532d" },
         { key: :neutral,  label: "Neutral",   stars: "3 ★",   bg: "#fffbeb", border: "#fde68a", hdr: "#92400e", txt: "#78350f" },
         { key: :negative, label: "Negative",  stars: "1–2 ★", bg: "#fef2f2", border: "#fca5a5", hdr: "#991b1b", txt: "#7f1d1d" }
       ].each do |cat| %>
-        <% cat_data  = (rc[cat[:key]] || {}).with_indifferent_access %>
-        <% narrative = (ca[cat[:key]] || {}).with_indifferent_access[:narrative].to_s %>
-        <% next if cat_data[:count].to_i == 0 && narrative.blank? %>
+        <% cat_data = (rc[cat[:key]] || {}).with_indifferent_access %>
+        <% next if cat_data[:count].to_i == 0 %>
         <div style="background:<%= cat[:bg] %>; border:1px solid <%= cat[:border] %>; border-radius:0.75rem; padding:1rem; margin-bottom:0.75rem;">
-          <%# header row %>
           <div style="display:flex; justify-content:space-between; align-items:baseline; margin-bottom:0.5rem;">
             <div style="font-size:0.95rem; font-weight:700; color:<%= cat[:hdr] %>;"><%= cat[:label] %> (<%= cat[:stars] %>)</div>
             <div style="font-size:0.8rem; color:var(--text-muted);"><%= cat_data[:share_percent] || 0 %>% of analyzed</div>
           </div>
-          <%# stat row %>
-          <div style="display:flex; gap:1.5rem; flex-wrap:wrap; margin-bottom:<%= narrative.present? ? '0.75rem' : '0' %>; font-size:0.875rem; color:<%= cat[:txt] %>;">
+          <div style="display:flex; gap:1.5rem; flex-wrap:wrap; font-size:0.875rem; color:<%= cat[:txt] %>;">
             <span>Total: <strong><%= cat_data[:count] || 0 %></strong></span>
             <span style="color:#059669;">Real: <strong><%= cat_data[:real] || 0 %></strong> (<%= cat_data[:genuine_percent] || 0 %>%)</span>
             <span style="color:#dc2626;">Fake: <strong><%= cat_data[:fake] || 0 %></strong></span>
+            <% if (cat_data[:uncertain] || 0).to_i > 0 %>
+              <span style="color:#b45309;">Uncertain: <strong><%= cat_data[:uncertain] %></strong></span>
+            <% end %>
             <% if (cat_data[:avg_rating] || 0).to_f > 0 %>
-              <span style="color:var(--text-muted);">Avg rating: <strong><%= cat_data[:avg_rating] %></strong></span>
+              <span style="color:var(--text-muted);">Avg: <strong><%= cat_data[:avg_rating] %> ★</strong></span>
             <% end %>
           </div>
-          <%# narrative %>
-          <% if narrative.present? %>
-            <div style="font-size:0.875rem; color:<%= cat[:txt] %>; border-top:1px solid <%= cat[:border] %>; padding-top:0.5rem;"><%= narrative %></div>
-          <% end %>
         </div>
       <% end %>
 
       <%# ── 4. KEY CONCLUSIONS ── %>
-      <% conclusions = Array(analysis[:key_conclusions] || analysis[:conclusions]) %>
+      <% conclusions = Array(analysis[:key_conclusions] || analysis[:key_tendencies]) %>
       <% if conclusions.any? %>
         <div style="background:#eff6ff; border:1px solid #bfdbfe; border-radius:0.5rem; padding:1rem; margin-bottom:1rem;">
           <div style="font-size:0.78rem; font-weight:700; color:#1d4ed8; text-transform:uppercase; letter-spacing:0.05em; margin-bottom:0.5rem;">Key Conclusions</div>
@@ -133,6 +137,12 @@
       <% end %>
     <% end %>
   </div>
+
+  <script>
+    document.getElementById('analyze-form').addEventListener('submit', function() {
+      document.getElementById('loading-overlay').style.display = 'flex';
+    });
+  </script>
 
 <% else %>
   <div class="card" style="text-align:center; padding:3rem 2rem;">

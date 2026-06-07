@@ -64,11 +64,13 @@ labeled.each do |r|
 end
 
 category_stats = buckets.transform_values do |bucket|
+  ratings = bucket.map { |r| r[:rating].to_f }.reject(&:zero?)
   {
-    total:     bucket.size,
-    real:      bucket.count { |r| r[:label] == "real" },
-    uncertain: bucket.count { |r| r[:label] == "uncertain" },
-    fake:      bucket.count { |r| r[:label] == "fake" }
+    total:      bucket.size,
+    real:       bucket.count { |r| r[:label] == "real" },
+    uncertain:  bucket.count { |r| r[:label] == "uncertain" },
+    fake:       bucket.count { |r| r[:label] == "fake" },
+    avg_rating: ratings.any? ? (ratings.sum / ratings.size).round(1) : 0.0
   }
 end
 
