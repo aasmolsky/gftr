@@ -10,6 +10,10 @@ module GftReviewer
 
       scored_hash = scored.is_a?(Hash) ? scored : JSON.parse(strip_fences(scored.to_s), symbolize_names: true)
 
+      # Always override with real values — don't trust LLM to echo them correctly
+      scored_hash[:place_id]   = input[:place_id]
+      scored_hash[:place_data] = input[:place_data]
+
       BuildReportTask.call(analysis_result: scored_hash, language: input[:language])
     end
 

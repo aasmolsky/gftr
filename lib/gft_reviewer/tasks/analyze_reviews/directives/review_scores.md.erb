@@ -28,6 +28,7 @@ Add `score_breakdown` to each review. Include **only non-zero criteria** in `sco
 {
   "review_id": "string",
   "rating": "integer (1–5)",
+  "snippet": "string",
   "author_name": "string",
   "score_breakdown": {
     "THIN_ACCOUNT_1": 10,
@@ -43,7 +44,6 @@ Add `score_breakdown` to each review. Include **only non-zero criteria** in `sco
 
 ## Scoring table
 
-Score each review individually. Sum all matching criteria. The total determines the label.
 Use the criteria reference for descriptions of each key.
 
 ### Fake signals — add points
@@ -69,15 +69,15 @@ Use the criteria reference for descriptions of each key.
 |-------------------------|--------|
 | `EDITED_REVIEW`         | −15    |
 | `HAS_PHOTOS`            | −20    |
-| `EXPERIENCED_AUTHOR_5`  | −10    |
-| `EXPERIENCED_AUTHOR_10` | −15    |
+| `EXPERIENCED_AUTHOR_5`  | −5     |
+| `EXPERIENCED_AUTHOR_10` | −10    |
 | `ACTIVE_PROFILE`        | −10    |
-| `LONG_TEXT`             | −20    |
+| `LONG_TEXT`             | −10    |
 | `SPECIFIC_DETAILS`      | −20    |
-| `BALANCED_TONE`         | −15    |
+| `BALANCED_TONE`         | −10    |
 | `NATURAL_LANGUAGE`      | −10    |
-| `LOCAL_GUIDE`           | −15    |
-| `OWNER_RESPONDED`       | −10    |
+| `LOCAL_GUIDE`           | −10    |
+| `OWNER_RESPONDED`       | −5     |
 | `HELPFUL_VOTES`         | −10    |
 
 ### Non-negotiable overrides — bypass the score threshold entirely
