@@ -1,41 +1,86 @@
 ## Review scoring rules
 
+### Input — each review arrives with this schema
+
+```json
+{
+  "review_id":             "string — unique identifier",
+  "position":              "integer — order in the list (1 = most recent)",
+  "rating":                "integer — 1 to 5",
+  "snippet":               "string — review text",
+  "snippet_length":        "integer — character count of snippet",
+  "author_name":           "string",
+  "author_reviews_count":  "integer — total reviews by this author on Google Maps",
+  "author_photos_count":   "integer — total photos uploaded by this author",
+  "is_local_guide":        "boolean",
+  "images_count":          "integer — photos attached to this review",
+  "response_present":      "boolean — owner replied to this review",
+  "was_edited":            "boolean — review was modified after posting",
+  "likes":                 "integer — helpful votes from other users"
+}
+```
+
+### Output — for each review return a scored object
+
+Add `score_breakdown` to each review. Include **only non-zero criteria** in `score_breakdown`.
+
+```json
+{
+  "review_id": "string",
+  "rating": "integer (1–5)",
+  "author_name": "string",
+  "score_breakdown": {
+    "THIN_ACCOUNT_1": 10,
+    "SHORT_TEXT": 10,
+    "GENERIC_TEXT": 20,
+    "FIVE_STAR_EMPTY": 15,
+    "EXPERIENCED_AUTHOR_5": -10
+  }
+}
+```
+
+---
+
+### Scoring table
+
 Score each review individually. Sum all matching criteria. The total score determines the label.
+Use the `key` as the field name in `score_breakdown`.
 
 ### Fake signals — add points
 
-| Criterion                                                                 | Points |
-|---------------------------------------------------------------------------|--------|
-| `author_reviews_count` = 0–1                                              | +20    |
-| `author_reviews_count` = 2–3                                              | +10    |
-| `snippet_length` < 20 characters                                          | +25    |
-| `snippet_length` < 60 characters                                          | +10    |
-| Post-negative burst — 5★ review appears immediately after a 1–2★ review  | +20    |
-| 5★ rating AND `snippet_length` < 50 characters                            | +15    |
-| Repeated surname — reviewer shares last name with one or more others      | +20    |
-| Generic text / no specifics — no mention of staff, product, price, time, or concrete detail | +20 |
-| 1–2★ rating AND any of: `snippet_length` < 50 OR `author_reviews_count` = 0–1 OR post-negative burst OR generic text | +20 |
-| Emotional or marketing tone — "best ever", "incredible", "unique offer", excessive exclamation | +10 |
-| Template clone — phrasing or structure nearly identical to another review | +20    |
+| Key                   | Criterion                                                                                   | Points |
+|-----------------------|---------------------------------------------------------------------------------------------|--------|
+| `THIN_ACCOUNT_0`      | `author_reviews_count` = 0–1                                                               | +20    |
+| `THIN_ACCOUNT_1`      | `author_reviews_count` = 2–3                                                               | +10    |
+| `SHORT_TEXT_EXTREME`  | `snippet_length` < 20 characters                                                            | +25    |
+| `SHORT_TEXT`          | `snippet_length` < 60 characters                                                            | +10    |
+| `BURST_AFTER_NEGATIVE`| Post-negative burst — 5★ review appears immediately after a 1–2★ review                    | +20    |
+| `FIVE_STAR_EMPTY`     | 5★ rating AND `snippet_length` < 50 characters                                              | +15    |
+| `SURNAME_REPEAT`      | Repeated surname — reviewer shares last name with one or more others                        | +20    |
+| `GENERIC_TEXT`        | Generic text / no specifics — no mention of staff, product, price, time, or concrete detail | +20    |
+| `SUSPICIOUS_NEGATIVE` | 1–2★ AND any of: `snippet_length` < 50 OR `author_reviews_count` = 0–1 OR `BURST_AFTER_NEGATIVE` OR `GENERIC_TEXT` | +20 |
+| `MARKETING_TONE`      | Emotional or marketing tone — "best ever", "incredible", "unique offer"                     | +10    |
+| `EMOJI_SPAM`          | Excessive punctuation or emoji — `!!!`, `🔥🔥🔥`, purely decorative, no substance          | +10    |
+| `TEMPLATE_CLONE`      | Template clone — phrasing or structure nearly identical to another review                   | +20    |
 
 ### Real signals — subtract points
 
-| Criterion                                                                 | Points |
-|---------------------------------------------------------------------------|--------|
-| Review was edited after posting (`was_edited` = true)                    | −15    |
-| Review includes photos (`images_count` > 0)                              | −20    |
-| `author_reviews_count` > 5                                                | −10    |
-| `author_reviews_count` > 10                                               | −15    |
-| `snippet_length` > 150 characters                                         | −20    |
-| Specific details present — names, products, prices, waiting times, physical descriptions | −20 |
+| Key                   | Criterion                                                                                   | Points |
+|-----------------------|---------------------------------------------------------------------------------------------|--------|
+| `EDITED_REVIEW`       | Review was edited after posting (`was_edited` = true)                                       | −15    |
+| `HAS_PHOTOS`          | Review includes photos (`images_count` > 0)                                                 | −20    |
+| `EXPERIENCED_AUTHOR_5`| `author_reviews_count` > 5                                                                  | −10    |
+| `EXPERIENCED_AUTHOR_10`| `author_reviews_count` > 10                                                                | −15    |
+| `ACTIVE_PROFILE`      | `author_photos_count` > 5 — active account with photo history                              | −10    |
+| `LONG_TEXT`           | `snippet_length` > 150 characters                                                           | −20    |
+| `SPECIFIC_DETAILS`    | Specific details — names, products, prices, waiting times, physical descriptions            | −20    |
+| `BALANCED_TONE`       | Balanced tone — review mentions both positives and negatives or caveats                     | −15    |
+| `NATURAL_LANGUAGE`    | Natural imperfect language — typos, colloquialisms, personal voice                          | −10    |
+| `LOCAL_GUIDE`         | `is_local_guide` = true — Google-verified active contributor                                | −15    |
+| `OWNER_RESPONDED`     | `response_present` = true — business responded, suggests real interaction                   | −10    |
+| `HELPFUL_VOTES`       | `likes` > 0 — other users marked the review as helpful                                     | −10    |
 
-### Verdict threshold
+### Rules
 
-| Total score | Label       |
-|-------------|-------------|
-| > 50        | `fake`      |
-| 20 – 50     | `uncertain` |
-| < 20        | `real`      |
-
-Apply this scoring to every review in `review_labels`. Include `score` and `score_breakdown` for each.
-
+- apply this scoring to every review. Include `score_breakdown` (using the keys above) for each.
+- processed_reviews must include every review from the input.

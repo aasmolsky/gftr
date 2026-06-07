@@ -1,100 +1,43 @@
-You are a fraud detector for Google Maps reviews. Your job is to find fake/manipulated reviews and separate them from genuine ones.
+You are a review fraud scorer. Score every review using the scoring rules below.
 
 Return ONLY valid JSON. No markdown, no code fences, no commentary.
 
-## Input
-- place_id: <%= place_id %>
-- language: <%= language %>
-- place_data: <%= place_data.to_json %>
-- reviews: <%= reviews.to_json %>
-
-% run("summarize_reviews", params: :reviews, return: :review_signals)
-
-## Supporting signals (context only — do not echo into output)
-<%= review_signals.to_json %>
-
 ---
-
-## Scoring rules
 
 <%= use("review_scores") %>
 
----
-
-## NON-NEGOTIABLE PRE-CLASSIFICATION RULES
-Apply these BEFORE any other reasoning. These override your judgment.
-
-1. **Post-negative burst** — Every review_id in `review_signals.post_negative_burst_ids` MUST be labeled "fake".
-   Reason: `"post-negative burst: 5★ review appeared immediately after a 1–2★ review"`.
-
-2. **Thin account + generic text** — rating = 5 AND author_reviews_count ≤ 1 AND snippet < 40 chars → MUST be "fake".
-
----
-
-## Fake review checklist — evaluate every remaining review against this
-
-### Strong fake indicators (one is often enough)
-- **Generic/empty text** — no specific mention of staff, product, price, wait time, or any concrete detail.
-  Bad: "Amazing service! Everything was perfect, will definitely come back." — pure praise, zero specifics.
-  Bad: "Very good, I recommend to everyone!!!" — no detail about what was good or why.
-  Bad: "Top quality, fast and professional." — sounds positive but describes nothing real.
-- **Template clone** — two or more reviews share the same sentence structure or near-identical phrasing.
-- **Repeated surname** — multiple reviewers share the same last name (any script).
-- **New/thin account** — author has ≤ 3 total Google Maps reviews.
-
-### Moderate indicators (need 2+ to flag fake)
-- Text under 5 words or 20 characters.
-- 5★ with zero useful information.
-- Excessive exclamation marks or emoji, no substance.
-
-### Strong real indicators
-- Specific names, products, prices, waiting times, or physical details.
-- Balanced tone — positive and something neutral or critical.
-- Natural imperfect language, typos, personal voice.
-- Author has diverse review history.
-
----
-
-## Your task
-
-1. Label every review: "real", "fake", or "uncertain". Add a short concrete reason.
-2. Identify suspicious patterns across the full set.
-3. Write a short narrative for each category explaining WHY those reviews look genuine or fake.
-4. List key conclusions (most important finding first).
+<%= use("review_patterns") %>
 
 ---
 
 ## Output schema
-{
-  "manipulation_assessment": "likely_fake" | "mixed" | "likely_real",
-  "suspicious_patterns": [string],
-  "fake_signals": [string],
-  "real_signals": [string],
-  "review_labels": [
-    {
-      "review_id": string,
-      "label": "real" | "fake" | "uncertain",
-      "confidence": number,
-      "reason": string
-    }
-  ],
-  "category_analysis": {
-    "positive": { "narrative": string },
-    "neutral":  { "narrative": string },
-    "negative": { "narrative": string }
-  },
-  "key_conclusions": [string],
-  "language": string
-}
 
-## Rules
-- review_labels must cover every review_id from the input.
-- category_analysis.positive.narrative: explain in 1–2 sentences why the 4–5★ reviews look genuine or fake.
-- category_analysis.neutral.narrative: same for 3★ reviews.
-- category_analysis.negative.narrative: same for 1–2★ reviews. Note if they look like genuine complaints or attacks.
-- suspicious_patterns: concrete observations (e.g. "5 reviews share surname 'Kowalski'", "4 five-star reviews posted right after a 1-star review").
-- fake_signals: top evidence for manipulation.
-- real_signals: top evidence for authenticity.
-- key_conclusions: 3–7 bullets, most important first.
-- language must match the requested language.
-- If data is insufficient, return valid JSON with empty arrays.
+```json
+{
+  "place_id": "string",
+  "language": "string",
+  "place_data": {
+    "title": "string",
+    "rating": "number",
+    "reviews_count": "integer",
+    "address": "string"
+  },
+  "processed_reviews": [
+    {
+      "review_id": "string",
+      "rating": "integer (1–5)",
+      "author_name": "string",
+      "score_breakdown": {
+        "THIN_ACCOUNT_1": 10,
+        "SHORT_TEXT": 10,
+        "GENERIC_TEXT": 20,
+        "FIVE_STAR_EMPTY": 15,
+        "EXPERIENCED_AUTHOR_5": -10
+      }
+    }
+  ]
+}
+```
+
+Reviews to score:
+<%= reviews.to_json %>

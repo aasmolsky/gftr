@@ -4,14 +4,9 @@ task name="analyze_reviews" {
     param name="language"   required=true  type="String"
     param name="place_data" required=true  type="Hash"
     param name="reviews"    required=true  type="Array"
-    param name="max_groups" required=false type="Integer" default=5
-
-    run name="summarize_reviews" {
-      input   type="Array"
-      returns name="review_signals" type="Hash"
-    }
 
     use name="review_scores"
+    use name="review_patterns"
   }
 }
 

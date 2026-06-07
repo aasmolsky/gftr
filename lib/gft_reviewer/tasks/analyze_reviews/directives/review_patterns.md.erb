@@ -1,0 +1,165 @@
+## Pattern examples
+
+Use these examples to calibrate your scoring. Each key matches a criterion from the scoring table.
+
+---
+
+### THIN_ACCOUNT_0 — author has 0–1 total reviews
+> "Great place, loved it!"
+> "Amazing, 5 stars!"
+> "Very good service."
+
+---
+
+### THIN_ACCOUNT_1 — author has 2–3 total reviews
+> "Excellent quality, will return."
+> "Fast and reliable, recommend."
+> "Good experience overall."
+
+---
+
+### SHORT_TEXT_EXTREME — text under 20 characters
+> "Perfect!"
+> "Love it!!!"
+> "Top service."
+
+---
+
+### SHORT_TEXT — text under 60 characters
+> "Good workshop, fast repairs."
+> "Nice staff, clean place."
+> "Recommended to everyone I know."
+
+---
+
+### BURST_AFTER_NEGATIVE — 5★ review immediately follows a 1–2★ review in the timeline
+> "Absolutely the best, nothing to complain about!" (posted 1 day after a 1★ review)
+> "Fantastic experience every single time!" (posted same day as a 2★ review)
+> "Incredible team, always professional!" (3rd consecutive 5★ after a 1★ review)
+
+---
+
+### FIVE_STAR_EMPTY — 5★ with under 50 characters, no substance
+> "Best in the city, highly recommend!"
+> "Excellent!! Very satisfied."
+> "Five stars, no question."
+
+---
+
+### SURNAME_REPEAT — multiple reviewers share the same last name
+> Jan Kowalski: "Great service!"
+> Piotr Kowalski: "Very professional."
+> Anna Kowalski: "Recommended!"
+
+---
+
+### GENERIC_TEXT — no staff name, product, price, time, or concrete situation mentioned
+> "The service was great and I am very happy with the result."
+> "Everything went smoothly, no complaints at all."
+> "Very pleasant experience from start to finish."
+
+---
+
+### SUSPICIOUS_NEGATIVE — 1–2★ with thin account or generic text, possibly coordinated attack
+> "Terrible, never again." (author has 1 review, snippet 28 chars)
+> "Awful service, waste of money!" (author has 0 reviews, no details)
+> "Would not recommend to anyone." (generic, no specific incident described)
+
+---
+
+### MARKETING_TONE — reads like promotional copy
+> "This is truly the best auto repair shop in the entire region, unmatched quality!"
+> "Incredible professionals offering a unique and unbeatable service experience."
+> "World-class results at an amazing price — there is simply no better option."
+
+---
+
+### EMOJI_SPAM — excessive punctuation or emoji with no informational content
+> "Amazing!!! 🔥🔥🔥 Loved it so much!!!! 💯💯"
+> "WOW!!!! Best ever!!!! ⭐⭐⭐⭐⭐🙌🙌🙌"
+> "Perfect!!!!! 😍😍😍 Absolutely perfect!!!!!"
+
+---
+
+### TEMPLATE_CLONE — near-identical phrasing across different reviews
+> "Fast service, professional staff, highly recommend to everyone."
+> "Fast service, professional team, highly recommend to all."
+> "Fast diagnosis, professional approach, recommend without hesitation."
+
+---
+
+### EDITED_REVIEW — review was modified after initial posting (real signal)
+> User initially wrote "Good service" then updated 3 days later with specific details about a problem that was resolved.
+> Review updated to correct a factual error about the price.
+> Follow-up edit added information about the warranty received.
+
+---
+
+### HAS_PHOTOS — review includes attached photos (real signal)
+> A photo of the repaired part with a receipt visible in the background.
+> Before/after photos of the bodywork repair.
+> A photo of the waiting area showing the actual space.
+
+---
+
+### EXPERIENCED_AUTHOR_5 / EXPERIENCED_AUTHOR_10 — author has review history (real signal)
+> Author has 47 reviews across restaurants, shops, and service providers over 3 years.
+> Author has 12 reviews, mix of 3★, 4★, and 5★ across different business types.
+> Author has 8 reviews with varied ratings, including one critical 2★ review.
+
+---
+
+### ACTIVE_PROFILE — author has uploaded many photos (real signal)
+> Author has 120 photos uploaded across Google Maps contributions.
+> Author has 34 photos, mostly of local restaurants and venues.
+> Author has 18 photos attached to various reviews.
+
+---
+
+### LONG_TEXT — review over 150 characters (real signal)
+> "I brought my car in for brake work on a Tuesday morning. The mechanic, Marek, explained clearly what needed replacing and showed me the worn pads. The job took about two hours and the price matched the estimate. No surprises."
+> "We visited with a reservation for a birthday dinner. The starter (beetroot soup) was excellent but the main course arrived lukewarm. The waiter apologized and offered a discount without us asking — that kind of service keeps us coming back."
+> "I've been using this pharmacy for about two years. The pharmacist always takes time to explain interactions between medications, which I really appreciate given I take three different prescriptions."
+
+---
+
+### SPECIFIC_DETAILS — names, products, prices, times mentioned (real signal)
+> "Asked for Michał specifically, he diagnosed the rattling noise in under 10 minutes — turned out to be a loose heat shield. Fixed on the spot, no charge."
+> "Waited about 35 minutes for a table on a Saturday, but the lamb chops at 68 PLN were worth it. The wine list is short but reasonably priced."
+> "The Samsung Galaxy screen replacement took exactly 90 minutes as promised. Cost was 280 PLN, same as quoted on the phone."
+
+---
+
+### BALANCED_TONE — mentions both positives and something negative or neutral (real signal)
+> "The food was genuinely good and portions were generous. Service was a bit slow but the staff were friendly about it. Would come back, just not on a busy evening."
+> "Quality of the repair is excellent. My only complaint is the parking — very limited spots and the entrance is hard to find the first time."
+> "Friendly team and fair prices. The waiting room could use some updating but it's clean and there's free coffee."
+
+---
+
+### NATURAL_LANGUAGE — typos, informal tone, personal voice (real signal)
+> "tbh i was sceptical at first bc the reviews seemed too good but turned out legit, they fixed my exhaust same day"
+> "went here after my regular garage couldnt fit me in. bit hard to find (park behind the supermarket not in front) but worth it"
+> "ok so i had a pretty stressful morning - car wouldnt start, called them, they walked me through a jump start over the phone for free. didnt even need to come in. thats just good people"
+
+---
+
+### LOCAL_GUIDE — Google-verified contributor (real signal)
+> Author is a Level 6 Local Guide with 230 reviews and 4,100 photos contributed.
+> Level 4 Local Guide, 68 reviews, active for over 4 years.
+> Level 5 Local Guide who consistently writes detailed reviews across the city.
+
+---
+
+### OWNER_RESPONDED — business replied to the review (real signal)
+> Owner replied: "Thank you for taking the time, Joanna! Glad Marek could sort the issue quickly. See you next service."
+> Owner replied: "We're sorry to hear about the wait — we've since added a second technician on Saturdays."
+> Owner replied: "Thank you for the kind words. The beetroot soup is indeed a favourite — chef will be pleased to hear it!"
+
+---
+
+### HELPFUL_VOTES — other users marked the review as helpful (real signal)
+> Review has 14 helpful votes — other users found the detailed description useful.
+> 7 people marked this review as helpful, suggesting the content resonated with readers.
+> 3 helpful votes on a review that describes a specific pricing dispute and its resolution.
+
