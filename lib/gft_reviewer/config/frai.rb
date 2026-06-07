@@ -15,9 +15,7 @@ end
 Frai.autoload!(File.expand_path("..", __dir__))
 
 Frai.configure do |config|
-  # LLM model — if set, frai calls the API via RubyLLM.
-  # If nil, frai returns the rendered prompt (CLI mode — Claude CLI is the LLM).
-  #
-  config.model   = ENV["LLM_MODEL"].to_s.strip.empty? ? nil : ENV["LLM_MODEL"]
-  config.api_key = ENV["LLM_API_KEY"].to_s.strip.empty? ? nil : ENV["LLM_API_KEY"]
+  config.project_root = File.expand_path("..", __dir__)
+  config.model        = ENV["LLM_MODEL"].to_s.strip.empty? ? nil : ENV["LLM_MODEL"]
+  config.api_key      = ENV["LLM_API_KEY"].to_s.strip.empty? ? nil : ENV["LLM_API_KEY"]
 end
