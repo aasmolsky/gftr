@@ -1,0 +1,320 @@
+# gft_reviewer
+
+Built with [Frai](https://github.com/aasmolsky/frai) — Ruby LLM framework.
+
+Ruby is an expressive language built for developer happiness — but it rarely appears in AI tooling, where Python dominates. Frai brings Rails-style conventions to LLM workflows: clear structure, sensible defaults, and a simple contract that scales from a single prompt to a multi-agent system.
+
+The heavy lifting — LLM calls, subprocess scripts, I/O — happens outside Ruby's runtime. So you get the elegance of Ruby DSL with none of the performance concerns.
+
+---
+
+## Setup
+
+`frai new` does not create a project `Gemfile`.
+Install Frai in the Ruby project that will run these files, or install it globally:
+
+```bash
+gem install frai
+```
+
+If your host application uses Bundler, add Frai there:
+
+```ruby
+gem "frai"
+```
+
+In that mode, run Frai commands through Bundler, for example:
+
+```bash
+bundle exec frai c
+bundle exec frai e AnalyzeItemTask "input"
+```
+
+`frai console` / `frai c` loads the current Frai project, so it only works from a directory that contains `config/frai.rb` and the Frai project structure.
+
+You may also need a provider gem in that host application, depending on the model you use:
+
+```ruby
+gem "anthropic"    # for Claude
+gem "ruby-openai"  # for OpenAI
+gem "ollama-ai"    # for Ollama (local models)
+```
+
+---
+
+## Structure
+
+```
+gft_reviewer/
+  tasks/               # single LLM calls — the main building block
+    base_task.rb
+  pipelines/           # sequential chains of tasks
+    base_pipeline.rb
+  agents/              # orchestrators that decide what to call and when
+    base_agent.rb
+  scripts/             # shared scripts in any language (Python, JS, bash...)
+  directives/          # shared prompt templates (reused across tasks)
+    base.md.erb
+  config/
+    frai.rb            # LLM adapter, model, API key
+  spec/
+    conventions_spec.rb
+```
+
+---
+
+## Tasks
+
+A task is the core unit — **one LLM call**. It validates input, runs scripts to gather data, renders a prompt from templates, and sends it to the LLM.
+
+Generate a task:
+
+```bash
+frai gt analyze_item        # short for: frai generate task
+```
+
+This creates:
+
+```
+tasks/
+  analyze_item/
+    task.rb
+    directives/
+      main.md.erb
+    scripts/
+```
+
+### Minimal
+
+```ruby
+class AnalyzeItemTask < BaseTask
+end
+
+AnalyzeItemTask.call("some input")
+```
+
+### With params, constants, and sub-directives
+
+```ruby
+class AnalyzeItemTask < BaseTask
+  const :max_length, 500   # available in all directives as max_length
+
+  directive :main do
+    params do
+      required :name,     String   # Frai::MissingParam if absent
+      required :category, String   # Frai::InvalidParam if wrong type
+      optional :lang,     String, default: "en"
+    end
+
+    use :context do
+      run :fetch_data do
+        input   String
+        returns data: String
+      end
+    end
+  end
+end
+```
+
+`task.rb` is the contract — params, constants, sub-directives, and scripts are all declared here. Types and structure live here; logic lives in the templates.
+
+To run:
+
+```bash
+frai e AnalyzeItemTask "your input"    # short for: frai exec
+```
+
+Or from Ruby:
+
+```ruby
+AnalyzeItemTask.call(name: "item", category: "things")
+```
+
+---
+
+## Directives
+
+Directives are Markdown + ERB prompt templates. `main.md.erb` is always the entry point for the LLM call.
+
+### Variables
+
+Params, constants, and script results are available as plain methods:
+
+```erb
+<%= # tasks/analyze_item/directives/main.md.erb %>
+
+You are an expert analyst.
+Analyze this <%= category %>: <%= name %>
+Respond in <%= lang %>
+Max length: <%= max_length %> characters.
+```
+
+### Scripts
+
+Run a script and capture its result:
+
+```erb
+<% run(:fetch_data).with(:name).and_return(:data) %>
+<%= data %>
+```
+
+- `.with(:param)` — pass a value from the current context by name
+- `.and_return(:key)` — extract `:key` from the script's JSON output and expose it as a method
+
+Script results are memoized — each script runs at most once per task execution.
+
+### Sub-directives
+
+Render a sub-directive and capture its result:
+
+```erb
+<% use(:context).with(:name).and_return(:context_text) %>
+```
+
+Output a sub-directive's rendered text:
+
+```erb
+<%= use(:summary).with(:data) %>
+```
+
+### Conditional logic
+
+Full Ruby is available in templates:
+
+```erb
+<% use(:context).with(:name).and_return(:score) %>
+
+<% if score > max_length %>
+  <%= use(:detailed).with(:score) %>
+<% else %>
+  <%= use(:brief).with(:score) %>
+<% end %>
+```
+
+### Shared directives
+
+Directives reused across tasks go in the top-level `directives/` folder:
+
+```
+directives/
+  base.md.erb     # available to all tasks as a fallback
+```
+
+---
+
+## Scripts
+
+Scripts are executables in any language. They receive `{ input: value }` as JSON on stdin and write a JSON hash to stdout.
+
+```ruby
+# tasks/analyze_item/scripts/fetch_data.rb
+require 'json'
+input = JSON.parse($stdin.read, symbolize_names: true)[:input]
+puts JSON.generate({ data: "fetched: #{input}" })
+```
+
+```python
+# tasks/analyze_item/scripts/fetch_data.py
+import sys, json
+data = json.load(sys.stdin)
+print(json.dumps({ "data": f"fetched: {data['input']}" }))
+```
+
+Scripts in `scripts/` are never autoloaded — they run as subprocesses and are independently testable with pytest, jest, or any native tool.
+
+---
+
+## Pipelines
+
+A pipeline chains tasks sequentially. Each task's output becomes the next task's input:
+
+```ruby
+class CompareObjectsPipeline < BasePipeline
+  def call(input)
+    data   = FetchDataTask.call(input)
+    result = AnalyzeItemTask.call(data)
+    result
+  end
+end
+
+CompareObjectsPipeline.call("your input")
+```
+
+---
+
+## Agents
+
+An agent orchestrates tasks dynamically — it can branch, loop, and decide what to call next:
+
+```ruby
+class ResearchAgent < BaseAgent
+  def call(input)
+    data    = FetchDataTask.call(input)
+    summary = SummarizeTask.call(data)
+    summary
+  end
+end
+
+ResearchAgent.call("topic to research")
+```
+
+---
+
+## Configuration
+
+```ruby
+# config/frai.rb
+Frai.configure do |config|
+  config.model   = ENV["LLM_MODEL"]   # e.g. "claude-opus-4-6", "gpt-4o"
+  config.api_key = ENV["API_KEY"]
+end
+```
+
+The `:null` adapter returns the rendered prompt without making an LLM call — useful for testing.
+
+---
+
+## Claude CLI integration
+
+Each task gets its own slash command. `frai gt` creates it automatically:
+
+```bash
+frai gt analyze_item
+# → creates task files
+# → creates .claude/commands/analyze_item.md
+```
+
+Invoke from Claude CLI **inside the project directory**:
+
+```
+/analyze_item name(value) category(value)
+```
+
+Where `name` and `category` are params declared in `task.rb`. Required params missing → error.
+
+Remove a task:
+
+```bash
+frai rt analyze_item   # short for: frai remove task
+```
+
+---
+
+## CLI reference
+
+| Command | Description |
+|---|---|
+| `frai new PROJECT_NAME` | Create a new project (`frai n`) |
+| `frai generate task NAME` | Generate a task + Claude CLI command (`frai gt`) |
+| `frai generate pipeline NAME` | Generate a pipeline (`frai gp`) |
+| `frai generate agent NAME` | Generate an agent (`frai ga`) |
+| `frai remove task NAME` | Remove a task and its Claude CLI command (`frai rt`) |
+| `frai setup` | Register `mcp/*.rb` servers with Claude CLI (`frai s`) |
+| `frai exec CLASS_NAME [INPUT]` | Execute a task, pipeline, or agent (`frai e`) |
+| `frai console` | Interactive Ruby console with project loaded (`frai c`) |
+
+---
+
+## License
+
+MIT
