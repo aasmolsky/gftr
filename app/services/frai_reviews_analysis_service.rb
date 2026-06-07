@@ -12,6 +12,7 @@ class FraiReviewsAnalysisService
     )
 
     frai_result = normalize_result(raw_result)
+    # analyzed_ratings_count comes from the script (actual processed), not input size
 
     {
       analysis_status: "done",
@@ -53,8 +54,12 @@ class FraiReviewsAnalysisService
   # ---------------------------------------------------------------------------
   # Build payload — normalize SERP reviews into the schema Task 1 expects
   # ---------------------------------------------------------------------------
+  MAX_REVIEWS = 30
+
+  # ...existing code...
+
   def build_payload(place_id:, language:, serp_result:)
-    reviews = Array(serp_result[:reviews]).map { |r| normalize_review(r) }
+    reviews = Array(serp_result[:reviews]).first(MAX_REVIEWS).map { |r| normalize_review(r) }
     {
       place_id:   place_id,
       language:   language,
@@ -109,7 +114,9 @@ class FraiReviewsAnalysisService
   def normalize_result(raw_result)
     r = case raw_result
         when Hash then raw_result.respond_to?(:deep_symbolize_keys) ? raw_result.deep_symbolize_keys : raw_result
-        else JSON.parse(raw_result.to_s, symbolize_names: true)
+        else
+          cleaned = raw_result.to_s.gsub(/\A\s*```(?:json)?\s*/i, "").gsub(/\s*```\s*\z/, "").strip
+          JSON.parse(cleaned, symbolize_names: true)
         end
 
     total           = r[:analyzed_count].to_i

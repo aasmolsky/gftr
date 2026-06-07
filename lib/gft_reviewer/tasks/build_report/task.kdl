@@ -1,6 +1,7 @@
 task name="build_report" {
   directive name="main" {
-    param name="analysis_result" required=true type="Hash"
+    param name="analysis_result" required=true  type="Hash"
+    param name="language"        required=true  type="String"
 
     run name="process_reviews" {
       input   type="Hash"

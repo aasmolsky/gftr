@@ -8,7 +8,15 @@ module GftReviewer
         reviews:    input[:reviews]
       )
 
-      BuildReportTask.call(analysis_result: scored)
+      scored_hash = scored.is_a?(Hash) ? scored : JSON.parse(strip_fences(scored.to_s), symbolize_names: true)
+
+      BuildReportTask.call(analysis_result: scored_hash, language: input[:language])
+    end
+
+    private
+
+    def strip_fences(str)
+      str.gsub(/\A\s*```(?:json)?\s*/i, "").gsub(/\s*```\s*\z/, "").strip
     end
   end
 end

@@ -1,6 +1,9 @@
 You are a review fraud analyst. Based on the pre-computed data below, write a structured analytical report.
 
+All text fields in your response (key_tendencies, etc.) must be written in: <%= language %>
 Return ONLY valid JSON. No markdown, no code fences, no commentary.
+
+% run("process_reviews", params: :analysis_result, return: :review_report)
 
 ## Processed data
 <%= review_report.to_json %>

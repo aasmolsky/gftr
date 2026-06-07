@@ -24,11 +24,14 @@ UNCERTAIN_THRESHOLD = 20
 # Step 1: compute total_score per review, assign label
 # ---------------------------------------------------------------------------
 labeled = reviews.map do |review|
-  # score: null means non-negotiable override from Task 1 → always fake
-  if review[:score].nil?
+  breakdown = (review[:score_breakdown] || {})
+
+  # Non-negotiable override: score is null AND breakdown is empty
+  if review[:score].nil? && breakdown.empty?
     review.merge(computed_score: nil, label: "fake")
   else
-    total = review[:score].to_i
+    # Always compute total from breakdown — don't trust LLM's score field
+    total = breakdown.values.sum { |v| v.to_i }
 
     label = if total > FAKE_THRESHOLD
       "fake"

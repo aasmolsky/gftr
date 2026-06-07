@@ -1,8 +1,11 @@
 <% if current_user %>
   <%# ── Loading overlay ── %>
-  <div id="loading-overlay" style="display:none; position:fixed; inset:0; background:rgba(15,23,42,0.6); z-index:9999; align-items:center; justify-content:center; flex-direction:column; gap:1rem;">
-    <div style="width:48px; height:48px; border:4px solid #fff; border-top-color:transparent; border-radius:50%; animation:spin 0.8s linear infinite;"></div>
-    <div style="color:#fff; font-size:1rem; font-weight:600; letter-spacing:0.03em;">Analyzing reviews…</div>
+  <div id="loading-overlay" style="display:none; position:fixed; inset:0; background:rgba(15,23,42,0.75); z-index:9999; align-items:center; justify-content:center;">
+    <div style="background:white; border-radius:1rem; padding:2rem 2.5rem; display:flex; flex-direction:column; align-items:center; gap:0.75rem; box-shadow:0 25px 50px rgba(0,0,0,0.4); min-width:220px; text-align:center;">
+      <div style="width:40px; height:40px; border:4px solid var(--primary-color, #1e3a8a); border-top-color:transparent; border-radius:50%; animation:spin 0.8s linear infinite;"></div>
+      <div style="color:#111827; font-size:1rem; font-weight:600;">Analyzing reviews…</div>
+      <div style="color:#6b7280; font-size:0.8rem;">Please wait, this may take a moment</div>
+    </div>
   </div>
   <style>@keyframes spin { to { transform: rotate(360deg); } }</style>
 
@@ -61,7 +64,9 @@
             <strong><%= analysis[:authenticity_score] || 0 %>%</strong> not flagged as fake
           </span>
           <span style="font-size: 0.875rem;">Public: <strong><%= public_data[:rating] || analysis[:calculated_rating] || "—" %> ★</strong></span>
-          <span style="font-size: 0.875rem; color: #059669;">Real-only: <strong><%= analysis[:real_only_average_rating] || "—" %> ★</strong></span>
+          <% real_rating = analysis[:real_only_average_rating].to_f %>
+          <% real_rating_display = real_rating < 1.0 ? (real_rating == 0.0 ? "—" : "1.0") : real_rating %>
+          <span style="font-size: 0.875rem; color: #059669;">Real: <strong><%= real_rating_display %><%= real_rating_display == "—" ? "" : " ★" %></strong></span>
           <span style="font-size: 0.875rem; color: var(--text-muted);">
             Analyzed <strong><%= analysis[:analyzed_ratings_count] || 0 %></strong> —
             <span style="color:#dc2626;"><strong><%= analysis[:fake_count] || 0 %></strong> fake</span>,
@@ -77,14 +82,62 @@
       <% signal_summary = (analysis[:signal_summary] || {}).with_indifferent_access %>
       <% if signal_summary.present? %>
         <% fake_keys = %w[THIN_ACCOUNT_0 THIN_ACCOUNT_1 SHORT_TEXT_EXTREME SHORT_TEXT BURST_AFTER_NEGATIVE FIVE_STAR_EMPTY SURNAME_REPEAT GENERIC_TEXT SUSPICIOUS_NEGATIVE MARKETING_TONE EMOJI_SPAM TEMPLATE_CLONE] %>
-        <div style="background:#fff7ed; border:1px solid #fed7aa; border-radius:0.75rem; padding:1rem; margin-bottom:1rem;">
-          <div style="font-size:0.78rem; font-weight:700; color:#9a3412; text-transform:uppercase; letter-spacing:0.05em; margin-bottom:0.6rem;">Top fraud signals detected</div>
-          <div style="display:flex; flex-wrap:wrap; gap:0.4rem;">
-            <% signal_summary.sort_by { |_, v| -v.to_i }.first(10).each do |key, count| %>
-              <% is_fake = fake_keys.include?(key.to_s) %>
-              <span style="padding:0.2rem 0.6rem; border-radius:9999px; font-size:0.78rem; font-weight:600; background:<%= is_fake ? '#fee2e2' : '#dcfce7' %>; color:<%= is_fake ? '#991b1b' : '#166534' %>;">
-                <%= key %> · <%= count %>
-              </span>
+        <% signal_labels = {
+          "THIN_ACCOUNT_0"       => "New accounts (0–1 reviews)",
+          "THIN_ACCOUNT_1"       => "Thin accounts (2–3 reviews)",
+          "SHORT_TEXT_EXTREME"   => "Very short text",
+          "SHORT_TEXT"           => "Short text",
+          "BURST_AFTER_NEGATIVE" => "Burst after negative review",
+          "FIVE_STAR_EMPTY"      => "Empty 5★ reviews",
+          "SURNAME_REPEAT"       => "Repeated surnames",
+          "GENERIC_TEXT"         => "Generic, no details",
+          "SUSPICIOUS_NEGATIVE"  => "Suspicious negative",
+          "MARKETING_TONE"       => "Marketing tone",
+          "EMOJI_SPAM"           => "Emoji / punctuation spam",
+          "TEMPLATE_CLONE"       => "Template clones",
+          "EDITED_REVIEW"        => "Edited after posting",
+          "HAS_PHOTOS"           => "Includes photos",
+          "EXPERIENCED_AUTHOR_5" => "Author >5 reviews",
+          "EXPERIENCED_AUTHOR_10"=> "Author >10 reviews",
+          "ACTIVE_PROFILE"       => "Active profile",
+          "LONG_TEXT"            => "Detailed long text",
+          "SPECIFIC_DETAILS"     => "Specific details",
+          "BALANCED_TONE"        => "Balanced tone",
+          "NATURAL_LANGUAGE"     => "Natural language",
+          "LOCAL_GUIDE"          => "Local Guide",
+          "OWNER_RESPONDED"      => "Owner responded",
+          "HELPFUL_VOTES"        => "Has helpful votes"
+        } %>
+        <% fake_signals  = signal_summary.select { |k, _| fake_keys.include?(k.to_s) }.sort_by { |_, v| -v.to_i }.first(5) %>
+        <% real_signals  = signal_summary.reject { |k, _| fake_keys.include?(k.to_s) }.sort_by { |_, v| -v.to_i }.first(5) %>
+        <% total_reviews = analysis[:analyzed_ratings_count].to_i %>
+
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.75rem; margin-bottom:1rem;">
+          <div style="background:#fef2f2; border:1px solid #fca5a5; border-radius:0.75rem; padding:0.875rem;">
+            <div style="font-size:0.78rem; font-weight:700; color:#991b1b; text-transform:uppercase; letter-spacing:0.05em; margin-bottom:0.6rem;">Manipulation indicators</div>
+            <% if fake_signals.any? %>
+              <% fake_signals.each do |key, count| %>
+                <div style="display:flex; justify-content:space-between; align-items:center; font-size:0.8rem; padding:0.2rem 0; border-bottom:1px solid #fee2e2;">
+                  <span style="color:#7f1d1d;"><%= signal_labels[key.to_s] || key.to_s.downcase.gsub("_"," ") %></span>
+                  <span style="font-weight:700; color:#dc2626;"><%= count %> rev.</span>
+                </div>
+              <% end %>
+            <% else %>
+              <div style="font-size:0.8rem; color:#7f1d1d;">No manipulation signals detected</div>
+            <% end %>
+          </div>
+
+          <div style="background:#f0fdf4; border:1px solid #86efac; border-radius:0.75rem; padding:0.875rem;">
+            <div style="font-size:0.78rem; font-weight:700; color:#166534; text-transform:uppercase; letter-spacing:0.05em; margin-bottom:0.6rem;">Authenticity indicators</div>
+            <% if real_signals.any? %>
+              <% real_signals.each do |key, count| %>
+                <div style="display:flex; justify-content:space-between; align-items:center; font-size:0.8rem; padding:0.2rem 0; border-bottom:1px solid #bbf7d0;">
+                  <span style="color:#14532d;"><%= signal_labels[key.to_s] || key.to_s.downcase.gsub("_"," ") %></span>
+                  <span style="font-weight:700; color:#16a34a;"><%= count %> rev.</span>
+                </div>
+              <% end %>
+            <% else %>
+              <div style="font-size:0.8rem; color:#14532d;">No authenticity signals detected</div>
             <% end %>
           </div>
         </div>

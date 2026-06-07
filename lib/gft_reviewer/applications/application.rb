@@ -14,12 +14,12 @@ module GftReviewer
   #   )
   class Application < Frai::Application
     def call(place_id:, language:, place_data:, reviews:)
-      ReviewAnalysisPipeline.call(
+      ReviewAnalysisPipeline.call({
         place_id:   place_id,
         language:   language,
         place_data: place_data,
         reviews:    reviews
-      )
+      })
     end
   end
 end
