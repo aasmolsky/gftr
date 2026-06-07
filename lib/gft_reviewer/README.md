@@ -52,6 +52,7 @@ gft_reviewer/
     base_pipeline.rb
   agents/              # orchestrators that decide what to call and when
     base_agent.rb
+  applications/        # public entrypoints for external callers
   scripts/             # shared scripts in any language (Python, JS, bash...)
   directives/          # shared prompt templates (reused across tasks)
     base.md.erb
@@ -78,6 +79,7 @@ This creates:
 ```
 tasks/
   analyze_item/
+    task.kdl
     task.rb
     directives/
       main.md.erb
@@ -93,30 +95,37 @@ end
 AnalyzeItemTask.call("some input")
 ```
 
-### With params, constants, and sub-directives
+### With params, constants, MCP and sub-directives
+
+`task.kdl` is the **contract** — params, constants, MCPs, sub-directives, and scripts are all declared here. The Ruby `task.rb` is a thin entrypoint that just provides `TaskNameTask.call`.
+
+```kdl
+task name="analyze_item" {
+  mcp "database"
+
+  const "max_length" 500
+
+  directive name="main" {
+    param name="name"     required=true  type="String"
+    param name="category" required=true  type="String"
+    param name="lang"     required=false type="String" default="en"
+
+    use name="context" {
+      run name="fetch_data" {
+        input   type="String"
+        returns name="data" type="String"
+      }
+    }
+  }
+}
+```
+
+The Ruby class stays minimal:
 
 ```ruby
 class AnalyzeItemTask < BaseTask
-  const :max_length, 500   # available in all directives as max_length
-
-  directive :main do
-    params do
-      required :name,     String   # Frai::MissingParam if absent
-      required :category, String   # Frai::InvalidParam if wrong type
-      optional :lang,     String, default: "en"
-    end
-
-    use :context do
-      run :fetch_data do
-        input   String
-        returns data: String
-      end
-    end
-  end
 end
 ```
-
-`task.rb` is the contract — params, constants, sub-directives, and scripts are all declared here. Types and structure live here; logic lives in the templates.
 
 To run:
 
@@ -154,27 +163,30 @@ Max length: <%= max_length %> characters.
 Run a script and capture its result:
 
 ```erb
-<% run(:fetch_data).with(:name).and_return(:data) %>
+% run("fetch_data", params: :name, return: :data)
 <%= data %>
 ```
-
-- `.with(:param)` — pass a value from the current context by name
-- `.and_return(:key)` — extract `:key` from the script's JSON output and expose it as a method
 
 Script results are memoized — each script runs at most once per task execution.
 
 ### Sub-directives
 
-Render a sub-directive and capture its result:
+Capture a sub-directive's result:
 
 ```erb
-<% use(:context).with(:name).and_return(:context_text) %>
+% use("context", params: :name, return: :context_text)
 ```
 
-Output a sub-directive's rendered text:
+Render a sub-directive inline:
 
 ```erb
-<%= use(:summary).with(:data) %>
+<%= use("summary") %>
+```
+
+### Multiple inputs
+
+```erb
+% run("analyze", params: [:name, :category], return: :result)
 ```
 
 ### Conditional logic
@@ -182,13 +194,13 @@ Output a sub-directive's rendered text:
 Full Ruby is available in templates:
 
 ```erb
-<% use(:context).with(:name).and_return(:score) %>
+% use("context", params: :name, return: :score)
 
-<% if score > max_length %>
-  <%= use(:detailed).with(:score) %>
-<% else %>
-  <%= use(:brief).with(:score) %>
-<% end %>
+% if score > max_length
+  <%= use("detailed") %>
+% else
+  <%= use("brief") %>
+% end
 ```
 
 ### Shared directives
@@ -290,13 +302,32 @@ Invoke from Claude CLI **inside the project directory**:
 /analyze_item name(value) category(value)
 ```
 
-Where `name` and `category` are params declared in `task.rb`. Required params missing → error.
+Where `name` and `category` are params declared in `task.kdl`. Required params missing → error.
 
 Remove a task:
 
 ```bash
 frai rt analyze_item   # short for: frai remove task
 ```
+
+---
+
+## Applications
+
+An application is the **stable public entrypoint** for this project. External callers — Rails, other services, scripts — always call `Application.call(...)`. The internal implementation can change freely without affecting the caller.
+
+```ruby
+# applications/application.rb
+class Application < Frai::Application
+  def call(input)
+    AnalyzeItemTask.call(input)
+  end
+end
+
+Application.call("your input")
+```
+
+You can later add steps, swap tasks, or change the flow — the external call site stays the same.
 
 ---
 

@@ -9,7 +9,7 @@ Input:
 - place_data: <%= place_data.to_json %>
 - reviews: <%= reviews.to_json %>
 
-<% run(:summarize_reviews).with(:reviews).and_return(:review_stats) %>
+% run("summarize_reviews", params: :reviews, return: :review_stats)
 
 Review stats:
 <%= review_stats.to_json %>
