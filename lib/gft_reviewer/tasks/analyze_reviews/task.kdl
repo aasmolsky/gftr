@@ -8,8 +8,10 @@ task name="analyze_reviews" {
 
     run name="summarize_reviews" {
       input   type="Array"
-      returns name="review_stats" type="Hash"
+      returns name="review_signals" type="Hash"
     }
+
+    use name="review_scores"
   }
 }
 

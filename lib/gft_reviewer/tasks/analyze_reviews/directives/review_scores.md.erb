@@ -1,0 +1,41 @@
+## Review scoring rules
+
+Score each review individually. Sum all matching criteria. The total score determines the label.
+
+### Fake signals — add points
+
+| Criterion                                                                 | Points |
+|---------------------------------------------------------------------------|--------|
+| `author_reviews_count` = 0–1                                              | +20    |
+| `author_reviews_count` = 2–3                                              | +10    |
+| `snippet_length` < 20 characters                                          | +25    |
+| `snippet_length` < 60 characters                                          | +10    |
+| Post-negative burst — 5★ review appears immediately after a 1–2★ review  | +20    |
+| 5★ rating AND `snippet_length` < 50 characters                            | +15    |
+| Repeated surname — reviewer shares last name with one or more others      | +20    |
+| Generic text / no specifics — no mention of staff, product, price, time, or concrete detail | +20 |
+| 1–2★ rating AND any of: `snippet_length` < 50 OR `author_reviews_count` = 0–1 OR post-negative burst OR generic text | +20 |
+| Emotional or marketing tone — "best ever", "incredible", "unique offer", excessive exclamation | +10 |
+| Template clone — phrasing or structure nearly identical to another review | +20    |
+
+### Real signals — subtract points
+
+| Criterion                                                                 | Points |
+|---------------------------------------------------------------------------|--------|
+| Review was edited after posting (`was_edited` = true)                    | −15    |
+| Review includes photos (`images_count` > 0)                              | −20    |
+| `author_reviews_count` > 5                                                | −10    |
+| `author_reviews_count` > 10                                               | −15    |
+| `snippet_length` > 150 characters                                         | −20    |
+| Specific details present — names, products, prices, waiting times, physical descriptions | −20 |
+
+### Verdict threshold
+
+| Total score | Label       |
+|-------------|-------------|
+| > 50        | `fake`      |
+| 20 – 50     | `uncertain` |
+| < 20        | `real`      |
+
+Apply this scoring to every review in `review_labels`. Include `score` and `score_breakdown` for each.
+

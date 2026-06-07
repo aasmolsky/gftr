@@ -5,28 +5,24 @@
       <div class="form-group">
         <%= form.text_area :query, placeholder: "Enter Google Maps Place ID here...", rows: 1 %>
         <div style="margin-top: 0.5rem; font-size: 0.75rem; color: var(--text-muted); line-height: 1.4;">
-          Don't know the ID? 
-          <a href="https://developers.google.com/maps/documentation/places/web-service/place-id#find-id" 
-             target="_blank" 
-             style="color: var(--primary-color); text-decoration: none; font-weight: 500;">
+          Don't know the ID?
+          <a href="https://developers.google.com/maps/documentation/places/web-service/place-id#find-id"
+             target="_blank" style="color: var(--primary-color); text-decoration: none; font-weight: 500;">
             Find it on Google Maps
           </a>
-          <div style="margin-top: 0.25rem; font-style: italic;">
-            * Enter the name in the "Enter a location" field and select the place from the list to see the Place ID. Clicking on the place on the map itself will not work.
-          </div>
         </div>
       </div>
-      
       <div style="display: flex; justify-content: space-between; align-items: center; gap: 1rem;">
         <div style="display: flex; align-items: center; gap: 0.5rem;">
-          <%= form.label :hl, "Response Language:", style: "font-size: 0.875rem; font-weight: 500; color: var(--text-muted);" %>
+          <%= form.label :hl, "Language:", style: "font-size: 0.875rem; font-weight: 500; color: var(--text-muted);" %>
           <%= form.select :hl, [
-            ["Arabic", "ar"], ["Chinese (Simplified)", "zh-cn"], ["Chinese (Traditional)", "zh-tw"],
-            ["Dutch", "nl"], ["English", "en"], ["French", "fr"], ["German", "de"], 
-            ["Greek", "el"], ["Hindi", "hi"], ["Indonesian", "id"], ["Italian", "it"], 
-            ["Japanese", "ja"], ["Korean", "ko"], ["Polish", "pl"], ["Portuguese", "pt"], 
-            ["Russian", "ru"], ["Spanish", "es"], ["Thai", "th"], ["Turkish", "tr"], ["Vietnamese", "vi"]
-          ].sort_by { |name, _code| name }, { selected: session[:hl] || "en" }, { style: "padding: 0.25rem 0.5rem; border-radius: 0.375rem; border: 1px solid var(--border-color); font-size: 0.875rem; max-width: 200px;" } %>
+            ["Arabic","ar"],["Chinese (Simplified)","zh-cn"],["Chinese (Traditional)","zh-tw"],
+            ["Dutch","nl"],["English","en"],["French","fr"],["German","de"],["Greek","el"],
+            ["Hindi","hi"],["Indonesian","id"],["Italian","it"],["Japanese","ja"],["Korean","ko"],
+            ["Polish","pl"],["Portuguese","pt"],["Russian","ru"],["Spanish","es"],
+            ["Thai","th"],["Turkish","tr"],["Vietnamese","vi"]
+          ].sort_by { |name, _| name }, { selected: session[:hl] || "en" },
+          { style: "padding: 0.25rem 0.5rem; border-radius: 0.375rem; border: 1px solid var(--border-color); font-size: 0.875rem;" } %>
         </div>
         <%= form.submit "Analyze Reviews", class: "btn btn-primary" %>
       </div>
@@ -36,75 +32,113 @@
   <div class="card" style="border-left: 4px solid var(--primary-color);">
     <% if @last_analysis == "not_found" %>
       <div style="text-align: center; padding: 2rem 0;">
-        <h3 style="font-size: 1.125rem; font-weight: 700; color: #991b1b; margin-bottom: 0.5rem;">Place not found, sorry</h3>
-        <p style="font-size: 0.875rem; color: var(--text-muted);">We couldn't find any data for the provided ID or search term. Please try a valid Place ID.</p>
+        <h3 style="color: #991b1b;">Place not found</h3>
+        <p style="font-size: 0.875rem; color: var(--text-muted);">Please try a valid Google Maps Place ID.</p>
       </div>
     <% else %>
       <% public_data = (@last_request&.place_data_json || {}).with_indifferent_access %>
-      <% analysis = (@last_request&.frai_result_json || (@last_analysis.is_a?(Hash) ? @last_analysis : {}) || {}).with_indifferent_access %>
-      <% groups = Array(analysis[:groups]) %>
+      <% analysis    = (@last_request&.frai_result_json || (@last_analysis.is_a?(Hash) ? @last_analysis : {})).with_indifferent_access %>
+      <% assessment  = analysis[:manipulation_assessment].to_s %>
+      <% verdict_color = assessment == "likely_fake" ? "#dc2626" : assessment == "likely_real" ? "#059669" : "#b45309" %>
+      <% verdict_label = assessment == "likely_fake" ? "🔴 Likely Fake" : assessment == "likely_real" ? "🟢 Likely Real" : "🟡 Mixed" %>
+      <% rc = (analysis[:rating_categories] || {}).with_indifferent_access %>
+      <% ca = (analysis[:category_analysis] || {}).with_indifferent_access %>
 
-      <h3 style="font-size: 1.125rem; font-weight: 700; margin-bottom: 1rem; color: var(--primary-color);">
-        <%= analysis.present? ? "Analysis Result: #{public_data[:title] || @last_analysis&.dig('title') || 'Latest request'}" : "Analysis Preview (Example)" %>
-      </h3>
-      
-      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1.5rem;">
-        <div>
-          <h4 style="font-size: 0.875rem; color: var(--text-muted); margin-bottom: 0.5rem; text-transform: uppercase; letter-spacing: 0.05em;">Current Public Data</h4>
-          <div style="font-size: 1.125rem; font-weight: 600;">Rating: <%= public_data[:rating] || analysis[:calculated_rating] || "4.8" %> ★</div>
-          <div style="font-size: 0.875rem;">Total Reviews: <%= public_data[:reviews_count] || analysis[:analyzed_ratings_count] || "865" %></div>
-          <div style="font-size: 0.875rem; color: var(--text-muted);"><%= public_data[:address] || "Mountain View, CA, USA" %></div>
-        </div>
-        
-        <div>
-          <h4 style="font-size: 0.875rem; color: var(--text-muted); margin-bottom: 0.5rem; text-transform: uppercase; letter-spacing: 0.05em;">AI Analytics Result</h4>
-          <div style="font-size: 1.125rem; font-weight: 600; color: #059669;">Calculated Rating: <%= analysis[:calculated_rating] || analysis[:rating] || "3.9" %> ★</div>
-          <div style="font-size: 0.875rem;">Analyzed Samples: <%= analysis[:analyzed_ratings_count] || @last_analysis&.dig('analyzed_count') || "0" %></div>
-          <div style="font-size: 0.875rem; color: var(--text-muted);">Groups Detected: <%= groups.size %></div>
+      <%# ── 1. HEADER ── %>
+      <div style="margin-bottom: 1.5rem;">
+        <h3 style="font-size: 1.125rem; font-weight: 700; margin-bottom: 0.75rem; color: var(--primary-color);">
+          <%= public_data[:title] || "Analysis Result" %>
+        </h3>
+        <div style="display: flex; flex-wrap: wrap; gap: 1.25rem; align-items: baseline;">
+          <span style="font-size: 1.2rem; font-weight: 700; color: <%= verdict_color %>;"><%= verdict_label %></span>
+          <span style="font-size: 0.875rem; color: var(--text-muted);">
+            <strong><%= analysis[:authenticity_score] || 0 %>%</strong> not flagged as fake
+          </span>
+          <span style="font-size: 0.875rem;">Public: <strong><%= public_data[:rating] || analysis[:calculated_rating] || "—" %> ★</strong></span>
+          <span style="font-size: 0.875rem; color: #059669;">Real-only: <strong><%= analysis[:real_only_average_rating] || "—" %> ★</strong></span>
+          <span style="font-size: 0.875rem; color: var(--text-muted);">
+            Analyzed <strong><%= analysis[:analyzed_ratings_count] || 0 %></strong> —
+            <span style="color:#dc2626;"><strong><%= analysis[:fake_count] || 0 %></strong> fake</span>,
+            <span style="color:#059669;"><strong><%= analysis[:real_count] || 0 %></strong> real</span>
+          </span>
         </div>
       </div>
 
-      <% if analysis[:error].present? %>
-        <div style="background: #fef2f2; border: 1px solid #fecaca; border-radius: 0.5rem; padding: 1rem; margin-bottom: 1rem;">
-          <h4 style="font-size: 0.875rem; color: #991b1b; margin-bottom: 0.5rem; font-weight: 700;">Analysis Error</h4>
-          <div style="font-size: 0.875rem; color: #b91c1c;"><%= analysis.dig(:error, :message) || analysis[:error] %></div>
-        </div>
-      <% else %>
-        <div style="display: grid; gap: 1rem;">
-          <% if groups.any? %>
-            <% groups.first(5).each do |group| %>
-              <% group = group.with_indifferent_access %>
-              <div style="background: #f8fafc; border: 1px solid var(--border-color); border-radius: 0.75rem; padding: 1rem;">
-                <div style="display: flex; justify-content: space-between; gap: 1rem; align-items: baseline; margin-bottom: 0.5rem;">
-                  <h4 style="font-size: 1rem; font-weight: 700; margin: 0;"><%= group[:title] || group[:code] %></h4>
-                  <div style="font-size: 0.875rem; color: var(--text-muted);"><%= group[:share_percent] || 0 %>%</div>
-                </div>
-                <div style="font-size: 0.875rem; color: var(--text-muted); margin-bottom: 0.75rem;"><%= group[:summary] %></div>
-
-                <% examples = Array(group[:examples]) %>
-                <% if examples.any? %>
-                  <div style="font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted); margin-bottom: 0.25rem;">Examples</div>
-                  <ul style="margin: 0; padding-left: 1.1rem; color: #334155; font-size: 0.875rem;">
-                    <% examples.first(3).each do |example| %>
-                      <li><%= example %></li>
-                    <% end %>
-                  </ul>
-                <% end %>
-              </div>
-            <% end %>
-          <% else %>
-            <div style="background: #f8fafc; border: 1px dashed var(--border-color); border-radius: 0.75rem; padding: 1rem; color: var(--text-muted); font-size: 0.875rem;">
-              No groups returned yet. Run an analysis with a real LLM response to see the clusters here.
-            </div>
+      <%# ── 2. SUSPICIOUS PATTERNS ── %>
+      <% if analysis[:suspicious_patterns].present? || analysis[:fake_signals].present? %>
+        <div style="background:#fff7ed; border:1px solid #fed7aa; border-radius:0.75rem; padding:1rem; margin-bottom:1rem;">
+          <% if analysis[:suspicious_patterns].present? %>
+            <div style="font-size:0.78rem; font-weight:700; color:#9a3412; text-transform:uppercase; letter-spacing:0.05em; margin-bottom:0.35rem;">Suspicious patterns</div>
+            <ul style="margin:0 0 0.6rem; padding-left:1.1rem; color:#7c2d12; font-size:0.875rem;">
+              <% Array(analysis[:suspicious_patterns]).each { |p| %><li><%= p %></li><% } %>
+            </ul>
           <% end %>
+          <% if analysis[:fake_signals].present? %>
+            <div style="font-size:0.78rem; font-weight:700; color:#9a3412; text-transform:uppercase; letter-spacing:0.05em; margin-bottom:0.35rem;">Fake signals</div>
+            <ul style="margin:0; padding-left:1.1rem; color:#7c2d12; font-size:0.875rem;">
+              <% Array(analysis[:fake_signals]).each { |s| %><li><%= s %></li><% } %>
+            </ul>
+          <% end %>
+        </div>
+      <% end %>
+
+      <%# ── 3. CATEGORY BLOCKS: Positive → Neutral → Negative ── %>
+      <% [
+        { key: :positive, label: "Positive",  stars: "4–5 ★", bg: "#f0fdf4", border: "#86efac", hdr: "#166534", txt: "#14532d" },
+        { key: :neutral,  label: "Neutral",   stars: "3 ★",   bg: "#fffbeb", border: "#fde68a", hdr: "#92400e", txt: "#78350f" },
+        { key: :negative, label: "Negative",  stars: "1–2 ★", bg: "#fef2f2", border: "#fca5a5", hdr: "#991b1b", txt: "#7f1d1d" }
+      ].each do |cat| %>
+        <% cat_data  = (rc[cat[:key]] || {}).with_indifferent_access %>
+        <% narrative = (ca[cat[:key]] || {}).with_indifferent_access[:narrative].to_s %>
+        <% next if cat_data[:count].to_i == 0 && narrative.blank? %>
+        <div style="background:<%= cat[:bg] %>; border:1px solid <%= cat[:border] %>; border-radius:0.75rem; padding:1rem; margin-bottom:0.75rem;">
+          <%# header row %>
+          <div style="display:flex; justify-content:space-between; align-items:baseline; margin-bottom:0.5rem;">
+            <div style="font-size:0.95rem; font-weight:700; color:<%= cat[:hdr] %>;"><%= cat[:label] %> (<%= cat[:stars] %>)</div>
+            <div style="font-size:0.8rem; color:var(--text-muted);"><%= cat_data[:share_percent] || 0 %>% of analyzed</div>
+          </div>
+          <%# stat row %>
+          <div style="display:flex; gap:1.5rem; flex-wrap:wrap; margin-bottom:<%= narrative.present? ? '0.75rem' : '0' %>; font-size:0.875rem; color:<%= cat[:txt] %>;">
+            <span>Total: <strong><%= cat_data[:count] || 0 %></strong></span>
+            <span style="color:#059669;">Real: <strong><%= cat_data[:real] || 0 %></strong> (<%= cat_data[:genuine_percent] || 0 %>%)</span>
+            <span style="color:#dc2626;">Fake: <strong><%= cat_data[:fake] || 0 %></strong></span>
+            <% if (cat_data[:avg_rating] || 0).to_f > 0 %>
+              <span style="color:var(--text-muted);">Avg rating: <strong><%= cat_data[:avg_rating] %></strong></span>
+            <% end %>
+          </div>
+          <%# narrative %>
+          <% if narrative.present? %>
+            <div style="font-size:0.875rem; color:<%= cat[:txt] %>; border-top:1px solid <%= cat[:border] %>; padding-top:0.5rem;"><%= narrative %></div>
+          <% end %>
+        </div>
+      <% end %>
+
+      <%# ── 4. KEY CONCLUSIONS ── %>
+      <% conclusions = Array(analysis[:key_conclusions] || analysis[:conclusions]) %>
+      <% if conclusions.any? %>
+        <div style="background:#eff6ff; border:1px solid #bfdbfe; border-radius:0.5rem; padding:1rem; margin-bottom:1rem;">
+          <div style="font-size:0.78rem; font-weight:700; color:#1d4ed8; text-transform:uppercase; letter-spacing:0.05em; margin-bottom:0.5rem;">Key Conclusions</div>
+          <ul style="font-size:0.875rem; color:#1e3a8a; margin:0; padding-left:1.25rem;">
+            <% conclusions.first(7).each { |c| %><li><%= c %></li><% } %>
+          </ul>
+        </div>
+      <% end %>
+
+      <%# ── error ── %>
+      <% if analysis[:error].present? %>
+        <div style="background:#fef2f2; border:1px solid #fecaca; border-radius:0.5rem; padding:1rem;">
+          <div style="font-size:0.875rem; font-weight:700; color:#991b1b; margin-bottom:0.25rem;">Analysis Error</div>
+          <div style="font-size:0.875rem; color:#b91c1c;"><%= analysis.dig(:error, :message) || analysis[:error] %></div>
         </div>
       <% end %>
     <% end %>
   </div>
+
 <% else %>
-  <div class="card" style="text-align: center; padding: 3rem 2rem;">
-    <h2 style="margin-bottom: 1rem;">Welcome to GFTR</h2>
-    <p style="color: var(--text-muted); margin-bottom: 2rem;">Please log in with your Google account to start sending queries and tracking your history.</p>
-    <%= button_to "Login with Google", "/auth/google_oauth2", method: :post, class: "btn btn-primary", data: { turbo: false }, style: "padding: 0.75rem 2rem; font-size: 1rem;" %>
+  <div class="card" style="text-align:center; padding:3rem 2rem;">
+    <h2 style="margin-bottom:1rem;">Welcome to GFTR</h2>
+    <p style="color:var(--text-muted); margin-bottom:2rem;">Please log in with your Google account to start analyzing reviews.</p>
+    <%= button_to "Login with Google", "/auth/google_oauth2", method: :post, class: "btn btn-primary",
+        data: { turbo: false }, style: "padding:0.75rem 2rem; font-size:1rem;" %>
   </div>
 <% end %>
