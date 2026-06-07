@@ -1,0 +1,41 @@
+You are analyzing Google Maps reviews for fraud and authenticity signals.
+
+Return ONLY valid JSON, no markdown, no code fences, no commentary.
+
+Input:
+- place_id: <%= place_id %>
+- language: <%= language %>
+- max_groups: <%= max_groups %>
+- place_data: <%= place_data.to_json %>
+- reviews: <%= reviews.to_json %>
+
+<% run(:summarize_reviews).with(:reviews).and_return(:review_stats) %>
+
+Review stats:
+<%= review_stats.to_json %>
+
+Output schema:
+{
+  "calculated_rating": number,
+  "analyzed_ratings_count": integer,
+  "language": string,
+  "groups": [
+    {
+      "code": string,
+      "title": string,
+      "summary": string,
+      "examples": [string],
+      "share_percent": integer
+    }
+  ]
+}
+
+Rules:
+- language must match the requested language.
+- use review_stats as a compact signal summary before inspecting individual reviews.
+- groups must contain up to 5 characteristic clusters.
+- examples should contain short real review snippets from the input.
+- calculated_rating must be between 0 and 5.
+- If the data is insufficient, still return valid JSON with an empty groups array.
+
+
