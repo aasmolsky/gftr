@@ -6,6 +6,7 @@ module ParseReviews
   class CategoryStatsBuilder
     def initialize(labeled_reviews)
       @labeled_reviews = labeled_reviews
+      @total = labeled_reviews.size
     end
 
     def call
@@ -35,17 +36,21 @@ module ParseReviews
     end
 
     def build_stats(bucket)
+      count   = bucket.size
+      real    = count_label(bucket, 'real')
       ratings = bucket.map { |review| review[:rating].to_f }.reject(&:zero?)
 
       {
-        total: bucket.size,
-        real: count_label(bucket, 'real'),
-        uncertain: count_label(bucket, 'uncertain'),
-        fake: count_label(bucket, 'fake'),
-        avg_rating: ratings.any? ? (ratings.sum / ratings.size).round(1) : 0.0,
-        manipulation_signals: signal_hits(bucket, FAKE_SIGNAL_KEYS),
-        authenticity_signals: signal_hits(bucket, REAL_SIGNAL_KEYS),
-        suspicious_reviews: suspicious_reviews(bucket)
+        total:                 count,
+        real:                  real,
+        uncertain:             count_label(bucket, 'uncertain'),
+        fake:                  count_label(bucket, 'fake'),
+        genuine_percent:       count.positive? ? (real * 100.0 / count).round : 0,
+        share_percent:         @total.positive? ? (count * 100.0 / @total).round : 0,
+        avg_rating:            ratings.any? ? (ratings.sum / ratings.size).round(1) : 0.0,
+        manipulation_signals:  signal_hits(bucket, FAKE_SIGNAL_KEYS),
+        authenticity_signals:  signal_hits(bucket, REAL_SIGNAL_KEYS),
+        suspicious_reviews:    suspicious_reviews(bucket)
       }
     end
 

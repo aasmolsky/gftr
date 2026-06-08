@@ -1,4 +1,4 @@
 <desc>Combines parsed review data with LLM summary into the final report JSON.</desc>
-% run("report", params: [:data, :llm_data], return: :report)
+% run(:report, params: [:data, :llm_data], return: :report)
 
 <%= report.to_json %>

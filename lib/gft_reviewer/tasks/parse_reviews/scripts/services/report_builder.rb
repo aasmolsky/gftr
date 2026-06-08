@@ -11,25 +11,43 @@ module ParseReviews
     end
 
     def call
+      total = labeled_reviews.size
+      fake  = count_by_label('fake')
+      real  = count_by_label('real')
+
       {
-        place_id: input[:place_id],
-        language: input[:language],
-        place_data: input[:place_data],
-        declared_rating: input[:place_data][:rating],
+        place_id:                input[:place_id],
+        language:                input[:language],
+        place_data:              input[:place_data],
+        declared_rating:         input[:place_data][:rating],
+        manipulation_assessment: derive_assessment(fake, real, total),
+        authenticity_score:      total.positive? ? (fake.to_f / total * 100).round : 0,
         real_only_average_rating: real_only_average_rating,
-        estimated_rating: estimated_rating,
-        analyzed_count: labeled_reviews.size,
-        fake_count: count_by_label('fake'),
-        uncertain_count: count_by_label('uncertain'),
-        real_count: count_by_label('real'),
-        category_stats: CategoryStatsBuilder.new(labeled_reviews).call,
-        signal_summary: SignalSummaryBuilder.new(labeled_reviews).call
+        estimated_rating:        estimated_rating,
+        analyzed_count:          total,
+        fake_count:              fake,
+        uncertain_count:         count_by_label('uncertain'),
+        real_count:              real,
+        category_stats:          CategoryStatsBuilder.new(labeled_reviews).call,
+        signal_summary:          SignalSummaryBuilder.new(labeled_reviews).call
       }
     end
 
     private
 
     attr_reader :input, :labeled_reviews
+
+    def derive_assessment(fake_count, real_count, total)
+      return 'looks_real' unless total.positive?
+
+      if fake_count.to_f / total > 0.25
+        'untrusted'
+      elsif real_count.to_f / total > 0.8
+        'trusted'
+      else
+        'looks_real'
+      end
+    end
 
     def count_by_label(label)
       labeled_reviews.count { |review| review[:label] == label }

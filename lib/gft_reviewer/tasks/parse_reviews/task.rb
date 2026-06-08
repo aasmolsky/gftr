@@ -8,10 +8,8 @@ module ParseReviews
       param :llm_response, type: String, required: true
 
       run :parse do
-        input Hash
-        returns do
-          parsed Hash
-        end
+        input type: String
+        returns :parsed, type: Hash
       end
     end
   end

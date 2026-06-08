@@ -1,10 +1,13 @@
 <% if current_user %>
   <%# ── Loading overlay ── %>
   <div id="loading-overlay" style="display:none; position:fixed; inset:0; background:rgba(15,23,42,0.75); z-index:9999; align-items:center; justify-content:center;">
-    <div style="background:white; border-radius:1rem; padding:2rem 2.5rem; display:flex; flex-direction:column; align-items:center; gap:0.75rem; box-shadow:0 25px 50px rgba(0,0,0,0.4); min-width:220px; text-align:center;">
-      <div style="width:40px; height:40px; border:4px solid var(--primary-color, #1e3a8a); border-top-color:transparent; border-radius:50%; animation:spin 0.8s linear infinite;"></div>
-      <div style="color:#111827; font-size:1rem; font-weight:600;">Analyzing reviews…</div>
-      <div style="color:#6b7280; font-size:0.8rem;">Please wait, this may take a moment</div>
+    <div style="background:white; border-radius:1rem; padding:2rem 2.5rem; display:flex; flex-direction:column; align-items:center; gap:0.6rem; box-shadow:0 25px 50px rgba(0,0,0,0.4); min-width:260px; max-width:340px; text-align:center;">
+      <div style="width:44px; height:44px; border:4px solid var(--primary-color, #1e3a8a); border-top-color:transparent; border-radius:50%; animation:spin 0.8s linear infinite;"></div>
+      <div style="color:#111827; font-size:1rem; font-weight:700; margin-top:0.25rem;">Analyzing reviews…</div>
+      <div style="color:#6b7280; font-size:0.82rem; line-height:1.5;">
+        AI model is classifying each review individually.<br>
+        This usually takes <strong style="color:#374151;">30–90 seconds</strong> — please don't close the page.
+      </div>
     </div>
   </div>
   <style>@keyframes spin { to { transform: rotate(360deg); } }</style>
