@@ -4,68 +4,31 @@ Use these examples to calibrate your scoring. Each key matches a criterion from 
 
 ---
 
-### NON-NEGOTIABLE OVERRIDE: Post-negative burst
-*(5★ within 5 positions after a 1–2★ — always fake, ignore score)*
-
-> position 14: "Terrible service, waited 2 hours and the car wasn't fixed." (1★)
-> position 15: "Amazing place, best in the city!" (5★) ← **fake**
-
-> position 3: "They damaged my bumper and refused to pay." (2★)
-> position 4: "Incredible team, very professional!" (5★) ← **fake**
-> position 5: "Super fast and reliable, highly recommend!" (5★) ← **fake**
-
-> position 9: "Never coming back, rude staff." (1★)
-> position 10: "Absolutely fantastic experience!" (5★) ← **fake**
-
----
-
-### NON-NEGOTIABLE OVERRIDE: Thin account + generic 5★
-*(rating = 5, author_reviews_count ≤ 1, snippet_length < 40 — always fake, ignore score)*
-
-> author has 0 reviews total: "Great service!" (5★, 14 chars) ← **fake**
-> author has 1 review total: "Highly recommend!!!" (5★, 19 chars) ← **fake**
-> author has 1 review total: "Best workshop in town." (5★, 22 chars) ← **fake**
-> author has 0 reviews total: "Отлично!" (5★, 8 chars) ← **fake**
-> author has 1 review total: "Top quality work." (5★, 17 chars) ← **fake**
-
----
-
 ### THIN_ACCOUNT_0 — author has 0–1 total reviews
 
-> "Great place, loved it!" — 1 review total on Google Maps
-> "Amazing, 5 stars!" — 0 reviews, account created recently
-> "Very good service." — 1 review, no profile photo, no history
-> "Полностью доволен. Рекомендую." — 0 reviews total, single visit account
-> "Everything was exactly as expected, will return." — 1 review total, nothing else on the profile
+> "Very satisfied, would recommend." — 0 reviews total
+> "Everything was exactly as expected, will return." — 1 review
 
 ---
 
 ### THIN_ACCOUNT_1 — author has 2–3 total reviews
 
 > "Excellent quality, will return." — 2 reviews total, both 5★
-> "Fast and reliable, recommend." — 3 reviews, all for car workshops
-> "Good experience overall." — 2 reviews, both generic one-liners
-> "Хорошее место, мастера знают дело." — 2 reviews total on account
-> "Brought my car for an oil change, quick and easy." — 3 reviews, all in the same month
+> "Everything was exactly as expected, will return." — 3 review total, nothing else on the profile — 1-2 reviews total all 5★
 
 ---
 
 ### SHORT_TEXT_EXTREME — text under 20 characters
 
-> "Perfect!"
-> "Love it!!!"
+> "Excellent!"
 > "Top service."
-> "Отлично!"
-> "👍👍👍"
 
 ---
 
 ### SHORT_TEXT — text under 60 characters
 
-> "Good workshop, fast repairs."
-> "Nice staff, clean place."
-> "Recommended to everyone I know."
-> "Быстро и качественно, спасибо."
+> "Fast and quality work, thank you."
+> "Brought my car for an oil change, quick and easy." — 3 reviews, all in the same month
 > "Great guys, fair price, no issues."
 
 ---
@@ -74,25 +37,14 @@ Use these examples to calibrate your scoring. Each key matches a criterion from 
 
 > "Completely ruined my car. Avoid at all costs." (1★, position 7)
 > "Best workshop I've ever visited! Exceptional service!!" (5★, position 8) ← burst
-> "Truly amazing, couldn't be happier with the results." (5★, position 9) ← burst
-
-> "Waited 3 hours, they didn't fix the problem, never coming back." (1★)
-> "Super professional team, very fast, great price!" (5★, next day) ← burst
-
-> "They charged me twice and refused to refund." (2★)
-> "Incredible experience, highly recommend to everyone!" (5★, same week) ← burst
-> "Amazing service, top quality work!" (5★, same week) ← burst
-> "Best garage in the city, no question." (5★, same week) ← burst
+> "Amazing service, top quality work!" (5★, position 9) ← burst
 
 ---
 
 ### FIVE_STAR_EMPTY — 5★ with text under 50 characters
 
-> "Best in the city, highly recommend!" (5★)
-> "Excellent!! Very satisfied with everything." (5★)
+> "Great service, highly recommend!" (5★)
 > "Five stars, no question at all." (5★)
-> "Отличный сервис, советую всем!" (5★)
-> "Great team, great results. Period." (5★)
 
 ---
 
@@ -101,13 +53,8 @@ Use these examples to calibrate your scoring. Each key matches a criterion from 
 > Jan Kowalski: "Great service!" (5★)
 > Piotr Kowalski: "Very professional." (5★)
 > Anna Kowalski: "Recommended!" (5★)
-
-> Ivan Petrov: "Fast and quality work." (5★)
-> Maria Petrova: "Excellent, will return." (5★)
-
-> Ahmed Al-Hassan: "Top service." (5★)
-> Omar Al-Hassan: "Amazing team." (5★)
-> Fatima Al-Hassan: "Highly recommend." (5★)
+> Анна Ковальска: Супер!
+> Иван Ковальски: Еще лучше
 
 ---
 
@@ -123,26 +70,18 @@ Note: `GENERIC_TEXT` and `MARKETING_TONE` are **separate signals** and can both 
 
 **A real review contains at least one of:**
 - what was repaired / what product was bought / what service was performed
-- a specific price or price range ("заплатил 800 зл", "charged €120")
+- a specific price or price range ("charged €120", "paid 800 PLN")
 - a waiting time ("waited 40 minutes", "ready same day")
-- a staff name or physical detail ("спасибо Марку", "the waiting room has free coffee")
+- a staff name or physical detail ("thanks to Marek", "the waiting room has free coffee")
 - a concrete problem described ("the brakes were grinding", "engine warning light was on")
-
-**If none of the above is present → GENERIC_TEXT applies.**
 
 **Short obvious cases:**
 > "The service was great and I am very happy with the result."
-> "Everything went smoothly, no complaints at all."
-> "Very fast, very professional. Recommend!"
-> "Всё понравилось, спасибо за работу."
-> "Great experience, will definitely come back."
+> "Everything was great, thank you for the work."
 
 **Longer tricky cases — natural language, decent length, but still zero real detail:**
-> "Отличный автосервис. Ребята знают свое дело — все сделали быстро, качественно и без лишней воды. Приятное отношение к клиентам и адекватные цены. Теперь будем всей семьей обслуживать свои авто только здесь. Рекомендую от всей души!"
+> "Great auto service. The guys know their job — everything was done quickly, professionally and without any fuss. Pleasant attitude towards customers and fair prices. From now on our whole family will service our cars only here. Highly recommend!"
 > ← sounds authentic, but: no repair type, no price, no staff name, no waiting time.
-
-> "I've been looking for a reliable workshop for years and finally found one. The team is professional, attentive and clearly knows what they're doing. The price was fair and everything was done on time. I left completely satisfied and will be back."
-> ← 170 chars of praise, but: no car issue described, no actual service named, no price, no name.
 
 > "Excellent workshop with a great atmosphere. Came in with a problem, left with everything sorted. The staff were polite and efficient. Strongly recommend this place to anyone looking for quality car service in the area."
 > ← "came in with a problem" — what problem? No answer.
@@ -154,8 +93,6 @@ Note: `GENERIC_TEXT` and `MARKETING_TONE` are **separate signals** and can both 
 > "Terrible, never again." (author: 1 review, 22 chars)
 > "Awful service, waste of money!" (author: 0 reviews, no details about what happened)
 > "Would not recommend to anyone." (no specific incident, no description)
-> "Horrible experience. Avoid." (1★, 0 reviews, 27 chars)
-> "They ruined my car and refuse to take responsibility." (1★, 1 review total, no supporting detail, no car model, no date, no description of damage)
 
 ---
 
@@ -169,8 +106,6 @@ Key markers: superlatives without substance, emotional filler, generic recommend
 > "World-class results at an amazing price — there is simply no better option."
 > "Absolutely outstanding — I have never experienced anything like this before!"
 > "A hidden gem! The most talented team I have ever encountered, period."
-> "Это место — просто находка! Лучший сервис в городе, ничего подобного нигде не найти."
-> "Невероятная команда профессионалов. Качество — выше всяких похвал. Цена — лучшая в городе. Рекомендую абсолютно всем без исключения!"
 
 ---
 
@@ -182,19 +117,12 @@ Real customers almost always mention at least something: a wait, a minor inconve
 > "Everything was perfect — fast, professional, friendly, great price. Couldn't ask for more!"
 > "The team is amazing, the work is flawless, the price is unbeatable, the service is top notch."
 > "Fantastic in every way. The best experience I have ever had at any workshop."
-> "Быстро, качественно, вежливо, недорого. Всё понравилось, претензий нет вообще."
-> "From the moment I walked in to the moment I left, everything was smooth, fast, friendly and professional. Absolutely zero complaints. Will recommend to everyone I know."
 
 ---
 
 ### NO_FIRST_PERSON — no "I / me / my / we / я / мы"
 
-**Signal: written as a description, not a personal account. Real reviews use first person.**
-
-> "Great service. Fast and professional. Recommend."
-> "The workshop is clean, staff is polite, prices are fair."
-> "Quality work, quick turnaround, good communication throughout."
-> "Хороший сервис. Быстро. Качественно. Мастера знают своё дело."
+> "Good service. Fast. Quality. The mechanics know their craft."
 > "The team is experienced and the results speak for themselves. No complaints whatsoever. Definitely worth visiting if you need reliable car service in this area."
 
 ---
@@ -206,21 +134,15 @@ Research shows fake reviews disproportionately use future tense as a substitute 
 
 > "Will definitely be back! Highly recommend to everyone."
 > "This will be my go-to place from now on. Can't recommend enough."
-> "Теперь только сюда. Всем советую!"
-> "Будем обращаться только сюда. Рекомендуем всей семьёй."
-> "Found my new permanent workshop. Will be recommending this place to all my friends and colleagues. Already told my neighbour about it. Great team, great results."
+> "This is now my go-to place. Recommend to everyone!"
 
 ---
 
 ### BUSINESS_NAME_DROP — explicitly names the business in the review text
 
-**Signal: real reviewers rarely type the full business name. Fake reviews often include it because the author was instructed to mention the name for SEO or branding.**
-
-> "I recommend Old School Garage to absolutely everyone!"
-> "Classic Garage is the best workshop in Wrocław, no doubt."
 > "Thank you Old School Custom Classic Garage for the amazing service!"
-> "Советую всем Auto Serwis Kowalski — лучший выбор в городе."
-> "If you're looking for quality car care, Old School Custom Classic Garage is the only place you need. The team there is unbeatable and I won't go anywhere else."
+> "I recommend the place to absolutely everyone!"
+> "If you're looking for the best service, The place is the only place you need. The team there is unbeatable and I won't go anywhere else."
 
 ---
 
@@ -228,9 +150,6 @@ Research shows fake reviews disproportionately use future tense as a substitute 
 
 > "Amazing!!! 🔥🔥🔥 Loved it so much!!!! 💯💯"
 > "WOW!!!! Best ever!!!! ⭐⭐⭐⭐⭐🙌🙌🙌"
-> "Perfect!!!!! 😍😍😍 Absolutely perfect!!!!!"
-> "👍👍👍👍👍 5 stars!!!! 🚗💨✨✨"
-> "Супер!!!! 🔥🔥🔥 Рекомендую всем!!!! 💪💪💪 Лучшие!!!! ⭐⭐⭐⭐⭐😍😍"
 
 ---
 
@@ -239,62 +158,13 @@ Research shows fake reviews disproportionately use future tense as a substitute 
 > "Fast service, professional staff, highly recommend to everyone."
 > "Fast service, professional team, highly recommend to all."
 > "Fast diagnosis, professional approach, recommend without hesitation."
-> "Quick service, friendly staff, would recommend to anyone."
-> "Professional service, fast turnaround, definitely recommend."
 
 ---
 
-### EDITED_REVIEW — review was modified after posting (real signal)
-
-> Updated 3 days later to add specific details about a warranty issue that was resolved.
-> Original: "Good service." → Edited to include: "They replaced the clutch, took 4 hours as promised, cost 1200 PLN."
-> Edited to correct the waiting time from "2 hours" to "90 minutes" after checking the receipt.
-> Added a follow-up note 2 weeks later: "The repair held up perfectly, no issues."
-> Correction posted: "I said the price was 500 but it was actually 450 — my mistake."
-
----
-
-### HAS_PHOTOS — review includes attached photos (real signal)
-
-> A photo of the repaired part with a receipt visible in the background.
-> Before/after photos of the bodywork repair.
-> A photo of the waiting area showing the actual space.
-> Photo of the invoice with the repair description visible.
-> Dashboard photo showing the warning light was off after the repair.
-
----
-
-### EXPERIENCED_AUTHOR_5 / EXPERIENCED_AUTHOR_10 — author has review history (real signal)
-
-> Author has 47 reviews across restaurants, shops, and service providers over 3 years.
-> Author has 12 reviews, mix of 3★, 4★ and 5★ across different business types.
-> Author has 8 reviews with varied ratings, including one critical 2★ review.
-> Author has 23 reviews across 4 cities, covering food, services, and retail.
-> Author has 31 reviews spanning 2 years — hotels, dentists, garages, cafes.
-
----
-
-### ACTIVE_PROFILE — author has uploaded many photos (real signal)
-
-> Author has 120 photos uploaded across Google Maps contributions.
-> Author has 34 photos, mostly of local restaurants and venues.
-> Author has 18 photos attached to various reviews over 2 years.
-> Author has 67 photos — street views, interiors, food, receipts.
-> Author has 210 photos, consistently contributing across 5 years.
-
----
-
-### LONG_TEXT — review over 450 characters (real signal)
+### LONG_TEXT — review over 400 characters (real signal)
 
 > "I brought my car in for brake work on a Tuesday morning. The mechanic, Marek, explained clearly what needed replacing and showed me the worn pads. The job took about two hours and the price matched the estimate — 680 PLN all in. No surprises. The waiting area is clean and there's decent coffee. I'll be back for the next service."
-
-> "We visited with a reservation for a birthday dinner. The starter — beetroot soup — was excellent but the main course arrived lukewarm. The waiter apologized and offered a discount without us asking. That kind of honesty keeps us coming back despite the small hiccup. The wine list is short but reasonably priced. Parking is easy on weekdays."
-
 > "I've been using this pharmacy for about two years now. The pharmacist always takes time to explain drug interactions, which I really appreciate given that I take three different prescriptions. Twice I've had them flag a potential issue that my doctor missed. The prices are mid-range and waiting times are usually under 10 minutes."
-
-> "Brought the car in after the engine warning light came on. They ran a diagnostic (350 PLN), found a faulty oxygen sensor, ordered the part and had it fitted by Friday — total cost 820 PLN. Communication throughout was clear — they called twice with updates. Only minor issue: the car came back slightly dusty inside. Nothing major."
-
-> "I ordered a custom sofa from this workshop. The initial consultation took an hour — they showed fabric samples, discussed dimensions and delivery timing. The sofa arrived 3 weeks later as promised. The stitching is clean and the foam density is exactly what I asked for. One leg was slightly uneven but they sent someone to fix it within 2 days. Very satisfied overall."
 
 ---
 
@@ -303,8 +173,6 @@ Research shows fake reviews disproportionately use future tense as a substitute 
 > "Asked for Michał specifically — he diagnosed the rattling noise in under 10 minutes. Turned out to be a loose heat shield. Fixed on the spot, no charge."
 > "Waited about 35 minutes for a table on a Saturday, but the lamb chops at 68 PLN were worth it."
 > "The Samsung Galaxy screen replacement took exactly 90 minutes as promised. Cost was 280 PLN, same as quoted on the phone."
-> "Oil change + filter for my 2019 Skoda Octavia — 340 PLN, done in 45 minutes. They also flagged that the rear brake pads are at 20% — useful to know."
-> "Spoke to Anna at the front desk — she was calm and clear about what was covered under warranty and what wasn't. The repair itself (gearbox seal) cost 1100 PLN and took 3 days."
 
 ---
 
@@ -312,46 +180,10 @@ Research shows fake reviews disproportionately use future tense as a substitute 
 
 > "The food was genuinely good and portions were generous. Service was a bit slow but the staff were friendly about it. Would come back, just not on a busy evening."
 > "Quality of the repair is excellent. My only complaint is the parking — very limited spots and the entrance is hard to find the first time."
-> "Friendly team and fair prices. The waiting room could use some updating but it's clean and there's free coffee."
-> "Brought my car in twice now. First time — perfect. Second time there was a small miscommunication about the pickup time. They made it right but it cost me half a day."
-> "The haircut itself was great — exactly what I asked for. The wait was longer than booked (30 minutes over), which is annoying, but the result made up for it."
 
 ---
 
 ### NATURAL_LANGUAGE — typos, informal tone, personal voice (real signal)
 
-> "tbh i was sceptical at first bc the reviews seemed too good but turned out legit, they fixed my exhaust same day"
+> "not the first time here, always fine. this time waited a bit longer than usual but no big deal, they did a good job"
 > "went here after my regular garage couldnt fit me in. bit hard to find (park behind the supermarket not in front) but worth it"
-> "ok so i had a pretty stressful morning — car wouldnt start, called them, they walked me through a jump start over the phone for free. didnt even need to come in. thats just good people"
-> "не первый раз тут, всегда норм. в этот раз чуть дольше ждал чем обычно но ничего страшного, зато сделали хорошо"
-> "My mum recommended this place and honestly wasnt expecting much but was pleasantly surprised — the guy at the desk (think his name was Tomek?) actually explained everything without making me feel stupid about cars"
-
----
-
-### LOCAL_GUIDE — Google-verified contributor (real signal)
-
-> Author is a Level 6 Local Guide with 230 reviews and 4,100 photos contributed.
-> Level 4 Local Guide, 68 reviews, active for over 4 years.
-> Level 5 Local Guide who consistently writes detailed reviews across the city.
-> Level 7 Local Guide, 500+ reviews, contributions spanning restaurants, services, and cultural venues.
-> Level 3 Local Guide with 28 reviews and 150 photos — still early but consistently engaged.
-
----
-
-### OWNER_RESPONDED — business replied to the review (real signal)
-
-> Owner replied: "Thank you for taking the time, Joanna! Glad Marek could sort the issue quickly. See you next service."
-> Owner replied: "We're sorry to hear about the wait — we've since added a second technician on Saturdays."
-> Owner replied: "Thank you for the kind words. The beetroot soup is indeed a favourite — chef will be pleased to hear it!"
-> Owner replied: "Hi Andrzej — we're glad the gearbox seal held up. Don't forget your 6-month check is due in October!"
-> Owner replied: "We're sorry about the communication mix-up on the pickup time. We've updated our process to send a confirmation SMS the morning before."
-
----
-
-### HELPFUL_VOTES — other users marked the review as helpful (real signal)
-
-> Review has 14 helpful votes — other users found the detailed description useful.
-> 7 people marked this review as helpful, suggesting the content resonated with readers.
-> 3 helpful votes on a review describing a specific pricing dispute and its resolution.
-> 22 helpful votes — the reviewer posted detailed photos and a cost breakdown.
-> 9 helpful votes on a review that warned about a known issue with parking access.

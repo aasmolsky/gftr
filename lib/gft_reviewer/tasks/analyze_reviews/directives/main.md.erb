@@ -1,6 +1,6 @@
 You are a review fraud scorer. Score and label every review in the input.
 
-All text fields in your response (reason, etc.) must be written in: <%= language %>
+All text fields in your response must be written in <%= language %>.
 Return ONLY valid JSON. No markdown, no code fences, no commentary.
 You MUST return all <%= reviews.size %> reviews in processed_reviews. Do not skip any review.
 
@@ -14,16 +14,13 @@ You MUST return all <%= reviews.size %> reviews in processed_reviews. Do not ski
 
 ## Output schema
 
+Return exactly this structure, filling in `processed_reviews` only:
+
 ```json
 {
-  "place_id": "string",
-  "language": "string",
-  "place_data": {
-    "title": "string",
-    "rating": "number",
-    "reviews_count": "integer",
-    "address": "string"
-  },
+  "place_id": "<%= place_id %>",
+  "language": "<%= language %>",
+  "place_data": <%= place_data.to_json %>,
   "processed_reviews": [
     {
       "review_id": "string",

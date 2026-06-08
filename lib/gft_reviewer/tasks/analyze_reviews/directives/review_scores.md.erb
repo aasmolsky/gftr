@@ -88,23 +88,4 @@ Use the criteria reference for descriptions of each key.
 | `OWNER_RESPONDED`       | −5     |
 | `HELPFUL_VOTES`         | −10    |
 
-### Non-negotiable overrides — bypass the score threshold entirely
-
-These two rules force label `"fake"` regardless of total score. Apply them first.
-
-| Condition                                                                | Label  | Reason to use                 |
-|--------------------------------------------------------------------------|--------|-------------------------------|
-| 5★ review appears within the next 5 positions after a 1–2★ review       | `fake` | `"post-negative burst"`       |
-| rating = 5 AND `author_reviews_count` ≤ 1 AND `snippet_length` < 40     | `fake` | `"thin account + generic 5★"` |
-
-For non-negotiable reviews set `"score": null` and `"score_breakdown": {}`.
-
-### Verdict threshold
-
-| Total score | Label       |
-|-------------|-------------|
-| > 50        | `fake`      |
-| 20 – 50     | `uncertain` |
-| < 20        | `real`      |
-
-Apply this scoring to every review. Include `score` and `score_breakdown` (keys from the table above) for each.
+Apply this scoring to every review. Include `score_breakdown` (keys from the table above) for each.

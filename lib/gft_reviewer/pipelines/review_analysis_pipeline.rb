@@ -25,12 +25,16 @@ module GftReviewer
 
     def parse_llm_json(str)
       cleaned = strip_fences(str)
-      JSON.parse(cleaned, symbolize_names: true)
-    rescue JSON::ParserError
-      fixed = cleaned.gsub(/,(\s*[}\]])/, '\1')
-      JSON.parse(fixed, symbolize_names: true)
-    rescue JSON::ParserError => e
-      raise "LLM returned malformed JSON: #{e.message}\n\nRaw (first 500 chars):\n#{cleaned[0, 500]}"
+      begin
+        JSON.parse(cleaned, symbolize_names: true)
+      rescue JSON::ParserError
+        fixed = cleaned.gsub(/,(\s*[}\]])/, '\1')
+        begin
+          JSON.parse(fixed, symbolize_names: true)
+        rescue JSON::ParserError => e
+          raise "LLM returned malformed JSON: #{e.message}\n\nRaw (first 500 chars):\n#{cleaned[0, 500]}"
+        end
+      end
     end
 
     def strip_fences(str)
@@ -38,4 +42,3 @@ module GftReviewer
     end
   end
 end
-
