@@ -302,12 +302,21 @@
       <%= yield %>
     </main>
 
-    <footer style="border-top:1px solid var(--border-color); background:var(--card-bg); margin-top:2rem; padding:1.5rem 0;">
+    <footer style="border-top:1px solid var(--border-color); background:var(--card-bg); margin-top:2rem; padding:1.25rem 0;">
       <div style="max-width:800px; margin:0 auto; padding:0 1rem; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:0.75rem;">
-        <a href="/" style="display:flex; align-items:center; gap:0.5rem; text-decoration:none; opacity:0.7; transition:opacity .2s;" onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=0.7">
-          <div style="width:22px; height:22px; background:var(--primary-gradient); border-radius:5px; display:flex; align-items:center; justify-content:center; color:white; font-size:0.7rem; font-weight:900;">G</div>
-          <span style="font-size:0.8rem; font-weight:800; background:var(--primary-gradient); -webkit-background-clip:text; -webkit-text-fill-color:transparent; letter-spacing:-0.03em; text-transform:uppercase;">GFTR</span>
-        </a>
+        <div style="display:flex; align-items:center; gap:0.5rem;">
+          <% [
+            { src: "https://cdn.simpleicons.org/ruby/CC342D",       alt: "Ruby",       title: "Ruby" },
+            { src: "https://cdn.simpleicons.org/rubyonrails/D30001", alt: "Rails",      title: "Ruby on Rails" },
+            { src: "https://cdn.simpleicons.org/openai/10A37F",      alt: "OpenAI",     title: "OpenAI" },
+            { src: "https://cdn.simpleicons.org/cursor/000000",      alt: "Cursor",     title: "Cursor" },
+            { src: "https://cdn.simpleicons.org/postgresql/336791",  alt: "PostgreSQL", title: "PostgreSQL" }
+          ].each do |ic| %>
+            <img src="<%= ic[:src] %>" alt="<%= ic[:alt] %>" title="<%= ic[:title] %>"
+                 style="width:18px; height:18px; opacity:0.55; transition:opacity .2s;"
+                 onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=0.55">
+          <% end %>
+        </div>
         <span style="font-size:0.75rem; color:var(--text-muted);">© <%= Date.today.year %> GFTR. All rights reserved.</span>
       </div>
     </footer>

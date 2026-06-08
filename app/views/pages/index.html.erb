@@ -14,17 +14,15 @@
     <%= form_with url: query_path, method: :post, local: true, html: { id: "analyze-form" } do |form| %>
       <div class="form-group">
         <%= form.text_area :query, placeholder: "Enter Google Maps Place ID here...", rows: 1 %>
-        <div style="margin-top: 0.5rem; font-size: 0.75rem; color: var(--text-muted); line-height: 1.4;">
+        <div style="padding:0.6rem 0 0.2rem 5px; font-size:0.8rem; color:var(--text-muted);">
           Don't know the ID?
           <a href="https://developers.google.com/maps/documentation/places/web-service/place-id#find-id"
-             target="_blank" style="color: var(--primary-color); text-decoration: none; font-weight: 500;">
-            Find it on Google Maps
-          </a>
+             target="_blank" style="color:var(--primary-color); text-decoration:none; font-weight:500;">Find it on Google Maps ↗</a>
         </div>
       </div>
-      <div style="display: flex; justify-content: space-between; align-items: center; gap: 1rem;">
-        <div style="display: flex; align-items: center; gap: 0.5rem;">
-          <%= form.label :hl, "Language:", style: "font-size: 0.875rem; font-weight: 500; color: var(--text-muted);" %>
+      <div style="display:flex; align-items:center; justify-content:space-between; gap:1rem; padding-top:0.75rem; border-top:1px solid var(--border-color);">
+        <div style="display:flex; align-items:center; gap:0.5rem;">
+          <%= form.label :hl, "Language:", style: "font-size:0.875rem; font-weight:500; color:var(--text-muted); white-space:nowrap;" %>
           <%= form.select :hl, [
             ["Arabic","ar"],["Chinese (Simplified)","zh-cn"],["Chinese (Traditional)","zh-tw"],
             ["Dutch","nl"],["English","en"],["French","fr"],["German","de"],["Greek","el"],
@@ -32,7 +30,7 @@
             ["Polish","pl"],["Portuguese","pt"],["Russian","ru"],["Spanish","es"],
             ["Thai","th"],["Turkish","tr"],["Vietnamese","vi"]
           ].sort_by { |name, _| name }, { selected: session[:hl] || "en" },
-          { style: "padding: 0.25rem 0.5rem; border-radius: 0.375rem; border: 1px solid var(--border-color); font-size: 0.875rem;" } %>
+          { style: "padding:0.25rem 0.5rem; border-radius:0.375rem; border:1px solid var(--border-color); font-size:0.875rem; background:white;" } %>
         </div>
         <%= form.submit "Analyze Reviews", class: "btn btn-primary" %>
       </div>
