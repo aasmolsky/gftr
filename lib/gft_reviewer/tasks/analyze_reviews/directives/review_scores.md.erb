@@ -22,7 +22,11 @@
 
 ### Output — for each review return a scored object
 
-Add `score_breakdown` to each review. Include **only non-zero criteria** in `score_breakdown`.
+For every review, check ALL criteria in both the fake signals table AND the real signals table.
+Include every criterion that matches — both positive (fake) and negative (real) — in `score_breakdown`.
+Omit only criteria that do not apply. Do not skip real signals.
+
+The example below shows the structure only. Any key from the scoring table above may appear:
 
 ```json
 {

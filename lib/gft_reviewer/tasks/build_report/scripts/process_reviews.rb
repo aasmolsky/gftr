@@ -6,11 +6,12 @@ require "json"
 
 payload = JSON.parse($stdin.read, symbolize_names: true)
 
-# analysis_result is the direct output of analyze_reviews task
+# build_report receives a single input hash: { analysis_result: ..., language: ... }
 data = payload[:input] || payload
+data = data[:analysis_result] if data.is_a?(Hash) && data[:analysis_result].is_a?(Hash)
 
 place_id   = data[:place_id].to_s
-language   = data[:language].to_s
+language   = (payload.dig(:input, :language) || data[:language]).to_s
 place_data = data[:place_data] || {}
 reviews    = Array(data[:processed_reviews])
 
@@ -63,10 +64,10 @@ real_reviews  = labeled.select { |r| r[:label] == "real" }
 real_ratings  = real_reviews.map { |r| r[:rating].to_f }.reject(&:zero?)
 real_only_avg = real_ratings.any? ? (real_ratings.sum / real_ratings.size).round(2) : 0.0
 
-# Estimated rating: fakes treated as 1★ penalty
+# Estimated rating: fakes treated as 2.5★ penalty
 total_count = labeled.size
 estimated_rating = if total_count.positive? && real_only_avg > 0
-  ((real_only_avg * real_count + 1.0 * fake_count) / total_count).round(2)
+  ((real_only_avg * real_count + 2.5 * fake_count) / total_count).round(2)
 else
   0.0
 end

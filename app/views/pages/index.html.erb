@@ -69,7 +69,9 @@
           <span style="font-size: 0.875rem; color: #059669;">Without fakes: <strong><%= real_rating_display %><%= real_rating_display == "—" ? "" : " ★" %></strong></span>
           <% est_rating = analysis[:estimated_rating].to_f %>
           <% if est_rating > 0 %>
-            <span style="font-size: 0.875rem; color: #b45309;">Estimated: <strong><%= est_rating %> ★</strong></span>
+            <span style="font-size: 0.875rem; color: #92400e; background:#fff7ed; border:1px solid #fed7aa; border-radius:0.375rem; padding:0.15rem 0.5rem;">
+              Estimated: <strong><%= est_rating %> ★</strong>
+            </span>
           <% end %>
           <span style="font-size: 0.875rem; color: var(--text-muted);">
             Analyzed <strong><%= analysis[:analyzed_ratings_count] || 0 %></strong> —
