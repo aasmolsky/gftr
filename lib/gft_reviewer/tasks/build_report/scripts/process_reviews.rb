@@ -53,11 +53,23 @@ labeled = reviews.map do |review|
 end
 
 # ---------------------------------------------------------------------------
-# Step 2: real-only average rating
+# Step 2: overall counts + real-only average rating
 # ---------------------------------------------------------------------------
+fake_count      = labeled.count { |r| r[:label] == "fake" }
+uncertain_count = labeled.count { |r| r[:label] == "uncertain" }
+real_count      = labeled.count { |r| r[:label] == "real" }
+
 real_reviews  = labeled.select { |r| r[:label] == "real" }
 real_ratings  = real_reviews.map { |r| r[:rating].to_f }.reject(&:zero?)
 real_only_avg = real_ratings.any? ? (real_ratings.sum / real_ratings.size).round(2) : 0.0
+
+# Estimated rating: fakes treated as 1★ penalty
+total_count = labeled.size
+estimated_rating = if total_count.positive? && real_only_avg > 0
+  ((real_only_avg * real_count + 1.0 * fake_count) / total_count).round(2)
+else
+  0.0
+end
 
 # ---------------------------------------------------------------------------
 # Step 3: category stats (positive 4-5★, neutral 3★, negative 1-2★)
@@ -98,13 +110,6 @@ end
 signal_summary = signal_counts.sort_by { |_, count| -count }.to_h
 
 # ---------------------------------------------------------------------------
-# Step 5: overall counts
-# ---------------------------------------------------------------------------
-fake_count      = labeled.count { |r| r[:label] == "fake" }
-uncertain_count = labeled.count { |r| r[:label] == "uncertain" }
-real_count      = labeled.count { |r| r[:label] == "real" }
-
-# ---------------------------------------------------------------------------
 # Output
 # ---------------------------------------------------------------------------
 review_report = {
@@ -113,6 +118,7 @@ review_report = {
   place_data:               place_data,
   declared_rating:          place_data[:rating],
   real_only_average_rating: real_only_avg,
+  estimated_rating:         estimated_rating,
   analyzed_count:           labeled.size,
   fake_count:               fake_count,
   uncertain_count:          uncertain_count,

@@ -66,7 +66,11 @@
           <span style="font-size: 0.875rem;">Public: <strong><%= public_data[:rating] || analysis[:calculated_rating] || "—" %> ★</strong></span>
           <% real_rating = analysis[:real_only_average_rating].to_f %>
           <% real_rating_display = real_rating < 1.0 ? (real_rating == 0.0 ? "—" : "1.0") : real_rating %>
-          <span style="font-size: 0.875rem; color: #059669;">Real: <strong><%= real_rating_display %><%= real_rating_display == "—" ? "" : " ★" %></strong></span>
+          <span style="font-size: 0.875rem; color: #059669;">Without fakes: <strong><%= real_rating_display %><%= real_rating_display == "—" ? "" : " ★" %></strong></span>
+          <% est_rating = analysis[:estimated_rating].to_f %>
+          <% if est_rating > 0 %>
+            <span style="font-size: 0.875rem; color: #b45309;">Estimated: <strong><%= est_rating %> ★</strong></span>
+          <% end %>
           <span style="font-size: 0.875rem; color: var(--text-muted);">
             Analyzed <strong><%= analysis[:analyzed_ratings_count] || 0 %></strong> —
             <span style="color:#dc2626;"><strong><%= analysis[:fake_count] || 0 %></strong> fake</span>,

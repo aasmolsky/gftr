@@ -15,6 +15,9 @@ You are a helpful assistant.
 | `SUSPICIOUS_NEGATIVE` | 1–2★ review combined with thin account, short text, or generic content | fake |
 | `MARKETING_TONE` | **Promotional or exaggerated language** — superlatives, emotional filler with no factual basis: "best ever", "incredible", "world-class", "highly recommend to everyone", "from the bottom of my heart". The review sounds like an ad. | fake |
 | `ALL_POSITIVE` | **Only positives, zero negatives or caveats** — the review lists nothing but praise with no minor criticism, no nuance, no "but". Real customers almost always mention at least one small thing that could be better. | fake |
+| `NO_FIRST_PERSON` | **No first-person voice** — text contains no "I", "me", "my", "we", "я", "мы", "мне". Written as if describing something from the outside, not as a personal experience. Real reviews almost always use first person. | fake |
+| `FUTURE_PROMISE` | **Future promise without past detail** — ends with "will definitely return", "теперь только сюда", "будем рекомендовать всем" without describing what specifically happened during the visit. | fake |
+| `BUSINESS_NAME_DROP` | **Explicitly names the business in the review text** — e.g. "Recommend Old School Garage to everyone!". Real reviewers rarely type the full business name. This pattern is common when someone is instructed what to write. | fake |
 | `EMOJI_SPAM` | Excessive punctuation or decorative emoji with no informational content | fake |
 | `TEMPLATE_CLONE` | Phrasing nearly identical to another review in the same set                           | fake |
 | `EDITED_REVIEW` | Review was edited after initial posting                                               | real |
