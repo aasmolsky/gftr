@@ -75,6 +75,19 @@ end
 # ---------------------------------------------------------------------------
 # Step 3: category stats (positive 4-5★, neutral 3★, negative 1-2★)
 # ---------------------------------------------------------------------------
+FAKE_SIGNAL_KEYS = %w[
+  THIN_ACCOUNT_0 THIN_ACCOUNT_1 SHORT_TEXT_EXTREME SHORT_TEXT
+  BURST_AFTER_NEGATIVE FIVE_STAR_EMPTY SURNAME_REPEAT GENERIC_TEXT
+  SUSPICIOUS_NEGATIVE MARKETING_TONE EMOJI_SPAM TEMPLATE_CLONE
+  ALL_POSITIVE REPEATABLE_PLUSES_2 REPEATABLE_PLUSES_3 BUSINESS_NAME_DROP
+].freeze
+
+REAL_SIGNAL_KEYS = %w[
+  EDITED_REVIEW HAS_PHOTOS EXPERIENCED_AUTHOR_5 EXPERIENCED_AUTHOR_10
+  ACTIVE_PROFILE LONG_TEXT SPECIFIC_DETAILS BALANCED_TONE NATURAL_LANGUAGE
+  LOCAL_GUIDE OWNER_RESPONDED HELPFUL_VOTES
+].freeze
+
 buckets = { positive: [], neutral: [], negative: [] }
 
 labeled.each do |r|
@@ -88,12 +101,45 @@ end
 
 category_stats = buckets.transform_values do |bucket|
   ratings = bucket.map { |r| r[:rating].to_f }.reject(&:zero?)
+
+  manip_signals = 0
+  auth_signals  = 0
+  bucket.each do |r|
+    (r[:score_breakdown] || {}).each_key do |k|
+      if FAKE_SIGNAL_KEYS.include?(k.to_s)
+        manip_signals += 1
+      elsif REAL_SIGNAL_KEYS.include?(k.to_s)
+        auth_signals  += 1
+      end
+    end
+  end
+
+  # Top-3 most suspicious: fake first (by computed_score desc), then uncertain
+  suspicious = bucket
+    .select  { |r| %w[fake uncertain].include?(r[:label]) }
+    .sort_by { |r| [r[:label] == "fake" ? 0 : 1, -(r[:computed_score] || 0)] }
+    .first(3)
+    .map { |r|
+      {
+        review_id:      r[:review_id],
+        author_name:    r[:author_name],
+        rating:         r[:rating],
+        snippet:        r[:snippet].to_s[0, 200],
+        label:          r[:label],
+        computed_score: r[:computed_score],
+        score_breakdown: r[:score_breakdown] || {}
+      }
+    }
+
   {
-    total:      bucket.size,
-    real:       bucket.count { |r| r[:label] == "real" },
-    uncertain:  bucket.count { |r| r[:label] == "uncertain" },
-    fake:       bucket.count { |r| r[:label] == "fake" },
-    avg_rating: ratings.any? ? (ratings.sum / ratings.size).round(1) : 0.0
+    total:                 bucket.size,
+    real:                  bucket.count { |r| r[:label] == "real" },
+    uncertain:             bucket.count { |r| r[:label] == "uncertain" },
+    fake:                  bucket.count { |r| r[:label] == "fake" },
+    avg_rating:            ratings.any? ? (ratings.sum / ratings.size).round(1) : 0.0,
+    manipulation_signals:  manip_signals,
+    authenticity_signals:  auth_signals,
+    suspicious_reviews:    suspicious
   }
 end
 
@@ -129,3 +175,19 @@ review_report = {
 }
 
 puts JSON.generate(review_report: review_report)
+
+# ---------------------------------------------------------------------------
+# Debug log
+# ---------------------------------------------------------------------------
+# begin
+#   log_path = File.expand_path("../../../../../log/process_reviews.log", __dir__)
+#   File.open(log_path, "a") do |f|
+#     f.puts "\n=== #{Time.now} ==="
+#    f.puts "--- INPUT reviews (#{reviews.size}) ---"
+#    f.puts JSON.pretty_generate(reviews)
+#    f.puts "--- OUTPUT review_report ---"
+#    f.puts JSON.pretty_generate(review_report)
+# end
+# rescue => e
+#   $stderr.puts "process_reviews log failed: #{e.message}"
+# end

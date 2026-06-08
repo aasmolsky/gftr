@@ -22,9 +22,9 @@
 
 ### Output — for each review return a scored object
 
-For every review, check ALL criteria in both the fake signals table AND the real signals table.
-Include every criterion that matches — both positive (fake) and negative (real) — in `score_breakdown`.
-Omit only criteria that do not apply. Do not skip real signals.
+For every review, go through EVERY row of both scoring tables below — in order, one by one.
+For each row: answer the Check question. If YES → add the key to `score_breakdown`. If NO → skip it.
+Do not stop early. Do not skip rows. Process all 30 signals for every review.
 
 The example below shows the structure only. Any key from the scoring table above may appear:
 
@@ -52,40 +52,42 @@ Use the criteria reference for descriptions of each key.
 
 ### Fake signals — add points
 
-| Key                    | Points |
-|------------------------|--------|
-| `THIN_ACCOUNT_0`       | +20    |
-| `THIN_ACCOUNT_1`       | +10    |
-| `SHORT_TEXT_EXTREME`   | +25    |
-| `SHORT_TEXT`           | +10    |
-| `BURST_AFTER_NEGATIVE` | +20    |
-| `FIVE_STAR_EMPTY`      | +15    |
-| `SURNAME_REPEAT`       | +20    |
-| `GENERIC_TEXT`         | +20    |
-| `SUSPICIOUS_NEGATIVE`  | +20    |
-| `MARKETING_TONE`       | +10    |
-| `ALL_POSITIVE`         | +10    |
-| `NO_FIRST_PERSON`      | +5     |
-| `FUTURE_PROMISE`       | +5     |
-| `BUSINESS_NAME_DROP`   | +10    |
-| `EMOJI_SPAM`           | +10    |
-| `TEMPLATE_CLONE`       | +20    |
+| Key                    | Points | Check |
+|------------------------|--------|-------|
+| `THIN_ACCOUNT_0`       | +20    | author_reviews_count ≤ 1? |
+| `THIN_ACCOUNT_1`       | +10    | author_reviews_count 2–3? |
+| `SHORT_TEXT_EXTREME`   | +25    | snippet_length < 20? |
+| `SHORT_TEXT`           | +10    | snippet_length < 60? |
+| `BURST_AFTER_NEGATIVE` | +20    | Is this 5★ review within 5 positions after a 1–2★ review in the list? |
+| `FIVE_STAR_EMPTY`      | +15    | rating = 5 AND snippet_length < 50? |
+| `SURNAME_REPEAT`       | +20    | Does another reviewer in this set share the same last name? |
+| `GENERIC_TEXT`         | +20    | After reading the snippet, can you answer at least ONE of: (a) exactly what service/product/repair was performed — not vague words like "service", "everything", "defects", "quality"; (b) an exact price; (c) an exact wait time; (d) a staff member's name; (e) a specific physical detail? If you cannot → apply |
+| `SUSPICIOUS_NEGATIVE`  | +20    | rating 1–2 AND (author thin OR text short OR no specific incident described)? |
+| `MARKETING_TONE`       | +10    | Does the text read like an ad — superlatives, emotional filler, "best ever", "world-class"? |
+| `ALL_POSITIVE`         | +15    | Read every sentence. Is there zero negative words, zero caveats ("but", "however", "though", "хотя", "но"), and zero neutral observations? Even one mild criticism disqualifies. If purely positive throughout → apply |
+| `NO_FIRST_PERSON`      | +5     | Is there no "I / me / my / we / our / я / мне / мой / мы / наш" anywhere in the text? |
+| `FUTURE_PROMISE`       | +5     | Does the text promise to return or recommend without describing what actually happened? |
+| `BUSINESS_NAME_DROP`   | +10    | Does the text contain the actual business name from place_data (not "this place", "here", or pronouns)? |
+| `EMOJI_SPAM`           | +10    | Excessive emoji or !!!-punctuation with no informational content? |
+| `TEMPLATE_CLONE`       | +20    | Is the phrasing nearly identical to another review in this set? |
+| `REPEATABLE_PLUSES_2`  | +5     | Count distinct praise phrases ("great", "amazing", "excellent", "highly recommend", "вежливые", "отличное", "wonderful", etc.). Are there exactly 2? |
+| `REPEATABLE_PLUSES_3`  | +5     | Count distinct praise phrases. Are there 3 or more? (Stacks with REPEATABLE_PLUSES_2 → +10 total for 3+) |
 
 ### Real signals — subtract points
 
-| Key                     | Points |
-|-------------------------|--------|
-| `EDITED_REVIEW`         | −15    |
-| `HAS_PHOTOS`            | −20    |
-| `EXPERIENCED_AUTHOR_5`  | −5     |
-| `EXPERIENCED_AUTHOR_10` | −10    |
-| `ACTIVE_PROFILE`        | −10    |
-| `LONG_TEXT`             | −10    |
-| `SPECIFIC_DETAILS`      | −20    |
-| `BALANCED_TONE`         | −10    |
-| `NATURAL_LANGUAGE`      | −10    |
-| `LOCAL_GUIDE`           | −10    |
-| `OWNER_RESPONDED`       | −5     |
-| `HELPFUL_VOTES`         | −10    |
+| Key                     | Points | Check |
+|-------------------------|--------|-------|
+| `EDITED_REVIEW`         | −5     | was_edited = true? |
+| `HAS_PHOTOS`            | −10    | images_count > 0? |
+| `EXPERIENCED_AUTHOR_5`  | −5     | author_reviews_count ≥ 5? |
+| `EXPERIENCED_AUTHOR_10` | −10    | author_reviews_count ≥ 10? |
+| `ACTIVE_PROFILE`        | −5     | author_photos_count > 5? |
+| `LONG_TEXT`             | −10    | snippet_length > 400? |
+| `SPECIFIC_DETAILS`      | −10    | Does the text mention a specific person's name, an exact price amount, an exact duration, a specific part/product name, or a concrete physical description? Generic words like "service", "defects", "quality", "everything", "обслуживание", "дефекты" do NOT count. |
+| `BALANCED_TONE`         | −10    | Does the text include both positives and at least one negative or caveat? |
+| `NATURAL_LANGUAGE`      | −10    | Does the text have typos, informal phrasing, or a personal voice? |
+| `LOCAL_GUIDE`           | −3     | is_local_guide = true? |
+| `OWNER_RESPONDED`       | −3     | response_present = true? |
+| `HELPFUL_VOTES`         | −10    | likes > 0? |
 
 Apply this scoring to every review. Include `score_breakdown` (keys from the table above) for each.

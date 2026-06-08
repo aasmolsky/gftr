@@ -25,6 +25,13 @@ class FraiReviewsAnalysisService
       0.0
     end
 
+    # manipulation_assessment needs estimated_rating, so computed here
+    frai_result[:manipulation_assessment] = derive_assessment(
+      f_count, r_count, total,
+      public_rating:    frai_result[:calculated_rating].to_f,
+      estimated_rating: frai_result[:estimated_rating].to_f
+    )
+
     # Build UI-friendly category stats from report data (or fallback to raw reviews)
     category_stats = frai_result[:category_stats].presence
     computed_categories = if category_stats.present?
@@ -146,8 +153,8 @@ class FraiReviewsAnalysisService
     uncertain_count = r[:uncertain_count].to_i
 
     {
-      manipulation_assessment:  derive_assessment(fake_count, real_count, total),
-      authenticity_score:       total.positive? ? (real_count.to_f / total * 100).round : 0,
+      manipulation_assessment:  nil,
+      authenticity_score:       total.positive? ? (fake_count.to_f / total * 100).round : 0,
       analyzed_ratings_count:   total,
       fake_count:               fake_count,
       real_count:               real_count,
@@ -164,14 +171,17 @@ class FraiReviewsAnalysisService
     raise "Pipeline returned non-parseable response: #{e.message}"
   end
 
-  def derive_assessment(fake_count, real_count, total)
-    return "mixed" unless total.positive?
-    if fake_count.to_f / total > 0.5
-      "likely_fake"
+  def derive_assessment(fake_count, real_count, total, public_rating: 0, estimated_rating: 0)
+    return "like_truth" unless total.positive?
+    if fake_count.to_f / total > 0.25
+      "untrusted"
     elsif real_count.to_f / total > 0.8
-      "likely_real"
+      "trusted"
+    elsif public_rating > 0 && estimated_rating > 0 &&
+          ((public_rating - estimated_rating).abs / public_rating * 100) < 15
+      "like_truth"
     else
-      "mixed"
+      "untrusted"
     end
   end
 
@@ -183,13 +193,16 @@ class FraiReviewsAnalysisService
       cat = raw.respond_to?(:deep_symbolize_keys) ? raw.deep_symbolize_keys : raw
       count = cat[:total].to_i
       memo[key] = {
-        count:           count,
-        real:            cat[:real].to_i,
-        fake:            cat[:fake].to_i,
-        uncertain:       cat[:uncertain].to_i,
-        genuine_percent: count.positive? ? (cat[:real].to_i * 100.0 / count).round : 0,
-        share_percent:   total.positive? ? (count * 100.0 / total).round : 0,
-        avg_rating:      cat[:avg_rating].to_f
+        count:                 count,
+        real:                  cat[:real].to_i,
+        fake:                  cat[:fake].to_i,
+        uncertain:             cat[:uncertain].to_i,
+        genuine_percent:       count.positive? ? (cat[:real].to_i * 100.0 / count).round : 0,
+        share_percent:         total.positive? ? (count * 100.0 / total).round : 0,
+        avg_rating:            cat[:avg_rating].to_f,
+        manipulation_signals:  cat[:manipulation_signals].to_i,
+        authenticity_signals:  cat[:authenticity_signals].to_i,
+        suspicious_reviews:    Array(cat[:suspicious_reviews])
       }
     end
   end

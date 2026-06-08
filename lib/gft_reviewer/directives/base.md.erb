@@ -20,6 +20,8 @@ You are a helpful assistant.
 | `BUSINESS_NAME_DROP` | **Explicitly names the business in the review text** — e.g. "Recommend Old School Garage to everyone!". Real reviewers rarely type the full business name. This pattern is common when someone is instructed what to write. | fake |
 | `EMOJI_SPAM` | Excessive punctuation or decorative emoji with no informational content | fake |
 | `TEMPLATE_CLONE` | Phrasing nearly identical to another review in the same set                           | fake |
+| `REPEATABLE_PLUSES_2` | **Exactly 2 distinct praise phrases** in one review — e.g. "great service" + "wonderful staff". Stacked praise without substance is a fake signal. | fake |
+| `REPEATABLE_PLUSES_3` | **3 or more distinct praise phrases** in one review. Stacks with REPEATABLE_PLUSES_2 (+10 total). | fake |
 | `EDITED_REVIEW` | Review was edited after initial posting                                               | real |
 | `HAS_PHOTOS` | Review includes attached photos                                                       | real |
 | `EXPERIENCED_AUTHOR_5` | Author has more than 5 reviews on Google Maps                                         | real |
