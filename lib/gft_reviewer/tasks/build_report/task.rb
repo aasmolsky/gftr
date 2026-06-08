@@ -1,11 +1,18 @@
-class BuildReportTask < BaseTask
-  schema do
-    param :analysis_result, type: Hash,   required: true
-    param :language,        type: String, required: true
-    run :process_reviews do
-      input Hash
-      returns do
-        review_report Hash
+# frozen_string_literal: true
+
+module BuildReport
+  class Task < BaseTask
+    schema do
+      llm false
+
+      param :data,     type: Hash,   required: true
+      param :llm_data, type: String, required: true
+
+      run :report do
+        input Hash
+        returns do
+          report Hash
+        end
       end
     end
   end

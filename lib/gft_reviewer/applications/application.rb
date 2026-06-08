@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module GftReviewer
   # Application is the public entrypoint for the GftReviewer frai project.
   #
@@ -23,4 +25,3 @@ module GftReviewer
     end
   end
 end
-

@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require "frai"
 
 # BaseAgent is the parent class for all agents in this project.

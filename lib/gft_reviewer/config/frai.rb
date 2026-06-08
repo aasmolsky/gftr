@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require "frai"
 
 # Load environment variables from .env (project-local, git-ignored)

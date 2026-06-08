@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 class SerpApiReviewsService
   def initialize(api_key = ENV['SERP_API_KEY'])
     @api_key = api_key

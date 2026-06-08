@@ -25,13 +25,6 @@ class FraiReviewsAnalysisService
       0.0
     end
 
-    # manipulation_assessment needs estimated_rating, so computed here
-    frai_result[:manipulation_assessment] = derive_assessment(
-      f_count, r_count, total,
-      public_rating:    frai_result[:calculated_rating].to_f,
-      estimated_rating: frai_result[:estimated_rating].to_f
-    )
-
     # Build UI-friendly category stats from report data (or fallback to raw reviews)
     category_stats = frai_result[:category_stats].presence
     computed_categories = if category_stats.present?
@@ -140,6 +133,12 @@ class FraiReviewsAnalysisService
   # Normalize pipeline output (review_report) → frai_result_json the UI reads
   # ---------------------------------------------------------------------------
   def normalize_result(raw_result)
+    # New-format: pipeline returns { _review_report: Hash, _llm: String }
+    if raw_result.is_a?(Hash) && raw_result.key?(:_review_report)
+      return normalize_from_script(raw_result[:_review_report], raw_result[:_llm])
+    end
+
+    # Legacy path: pipeline returned just the LLM string (or a hash)
     r = case raw_result
         when Hash then raw_result.respond_to?(:deep_symbolize_keys) ? raw_result.deep_symbolize_keys : raw_result
         else
@@ -153,7 +152,7 @@ class FraiReviewsAnalysisService
     uncertain_count = r[:uncertain_count].to_i
 
     {
-      manipulation_assessment:  nil,
+      manipulation_assessment:  derive_assessment(fake_count, real_count, total),
       authenticity_score:       total.positive? ? (fake_count.to_f / total * 100).round : 0,
       analyzed_ratings_count:   total,
       fake_count:               fake_count,
@@ -171,17 +170,51 @@ class FraiReviewsAnalysisService
     raise "Pipeline returned non-parseable response: #{e.message}"
   end
 
-  def derive_assessment(fake_count, real_count, total, public_rating: 0, estimated_rating: 0)
-    return "like_truth" unless total.positive?
+  def normalize_from_script(report, llm_response)
+    report = report.respond_to?(:deep_symbolize_keys) ? report.deep_symbolize_keys : report
+
+    total           = report[:analyzed_count].to_i
+    fake_count      = report[:fake_count].to_i
+    real_count      = report[:real_count].to_i
+    uncertain_count = report[:uncertain_count].to_i
+
+    # Parse LLM response only for key_tendencies (tolerates development-mode prompt text)
+    key_tendencies = []
+    if llm_response.is_a?(String)
+      begin
+        cleaned    = llm_response.gsub(/\A\s*```(?:json)?\s*/i, "").gsub(/\s*```\s*\z/, "").strip
+        llm_parsed = JSON.parse(cleaned, symbolize_names: true)
+        key_tendencies = Array(llm_parsed[:key_tendencies])
+      rescue JSON::ParserError, TypeError
+        key_tendencies = []
+      end
+    end
+
+    {
+      manipulation_assessment:  derive_assessment(fake_count, real_count, total),
+      authenticity_score:       total.positive? ? (fake_count.to_f / total * 100).round : 0,
+      analyzed_ratings_count:   total,
+      fake_count:               fake_count,
+      real_count:               real_count,
+      uncertain_count:          uncertain_count,
+      calculated_rating:        report[:declared_rating].to_f,
+      real_only_average_rating: report[:real_only_average_rating].to_f,
+      estimated_rating:         report[:estimated_rating].to_f,
+      category_stats:           report[:category_stats] || {},
+      signal_summary:           report[:signal_summary] || {},
+      key_conclusions:          key_tendencies,
+      language:                 report[:language].to_s
+    }
+  end
+
+  def derive_assessment(fake_count, real_count, total)
+    return "looks_real" unless total.positive?
     if fake_count.to_f / total > 0.25
       "untrusted"
     elsif real_count.to_f / total > 0.8
       "trusted"
-    elsif public_rating > 0 && estimated_rating > 0 &&
-          ((public_rating - estimated_rating).abs / public_rating * 100) < 15
-      "like_truth"
     else
-      "untrusted"
+      "looks_real"
     end
   end
 

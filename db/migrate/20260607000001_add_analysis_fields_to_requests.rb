@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 class AddAnalysisFieldsToRequests < ActiveRecord::Migration[8.1]
   def change
     change_table :requests, bulk: true do |t|
@@ -22,4 +24,3 @@ class AddAnalysisFieldsToRequests < ActiveRecord::Migration[8.1]
     add_index :requests, :analyzed_at
   end
 end
-

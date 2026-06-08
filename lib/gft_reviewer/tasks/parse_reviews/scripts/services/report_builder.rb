@@ -1,0 +1,60 @@
+# frozen_string_literal: true
+
+require_relative 'category_stats_builder'
+require_relative 'signal_summary_builder'
+
+module ParseReviews
+  class ReportBuilder
+    def initialize(input, labeled_reviews)
+      @input = input
+      @labeled_reviews = labeled_reviews
+    end
+
+    def call
+      {
+        place_id: input[:place_id],
+        language: input[:language],
+        place_data: input[:place_data],
+        declared_rating: input[:place_data][:rating],
+        real_only_average_rating: real_only_average_rating,
+        estimated_rating: estimated_rating,
+        analyzed_count: labeled_reviews.size,
+        fake_count: count_by_label('fake'),
+        uncertain_count: count_by_label('uncertain'),
+        real_count: count_by_label('real'),
+        category_stats: CategoryStatsBuilder.new(labeled_reviews).call,
+        signal_summary: SignalSummaryBuilder.new(labeled_reviews).call
+      }
+    end
+
+    private
+
+    attr_reader :input, :labeled_reviews
+
+    def count_by_label(label)
+      labeled_reviews.count { |review| review[:label] == label }
+    end
+
+    def real_reviews
+      labeled_reviews.select { |review| review[:label] == 'real' }
+    end
+
+    def real_only_average_rating
+      ratings = real_reviews.map { |review| review[:rating].to_f }.reject(&:zero?)
+      return 0.0 unless ratings.any?
+
+      (ratings.sum / ratings.size).round(2)
+    end
+
+    def estimated_rating
+      total_count = labeled_reviews.size
+      real_avg = real_only_average_rating
+      return 0.0 unless total_count.positive? && real_avg.positive?
+
+      real_count = count_by_label('real')
+      fake_count = count_by_label('fake')
+
+      ((real_avg * real_count + 2.5 * fake_count) / total_count).round(2)
+    end
+  end
+end

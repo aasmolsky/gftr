@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 OmniAuth.config.logger = Rails.logger
 OmniAuth.config.full_host = Rails.env.production? ? ENV["HOST"] : "http://localhost:3000"
 
