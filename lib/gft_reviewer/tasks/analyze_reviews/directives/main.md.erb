@@ -2,6 +2,7 @@ You are a review fraud scorer. Score and label every review in the input.
 
 All text fields in your response (reason, etc.) must be written in: <%= language %>
 Return ONLY valid JSON. No markdown, no code fences, no commentary.
+You MUST return all <%= reviews.size %> reviews in processed_reviews. Do not skip any review.
 
 ---
 

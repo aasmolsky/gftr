@@ -17,7 +17,7 @@ reviews    = Array(data[:processed_reviews])
 # ---------------------------------------------------------------------------
 # Verdict thresholds
 # ---------------------------------------------------------------------------
-FAKE_THRESHOLD      = 50
+FAKE_THRESHOLD      = 40
 UNCERTAIN_THRESHOLD = 20
 
 # ---------------------------------------------------------------------------
@@ -30,8 +30,15 @@ labeled = reviews.map do |review|
   if review[:score].nil? && breakdown.empty?
     review.merge(computed_score: nil, label: "fake")
   else
-    # Always compute total from breakdown — don't trust LLM's score field
-    total = breakdown.values.sum { |v| v.to_i }
+    fake_values = breakdown.values.select { |v| v.to_i > 0 }
+    real_values = breakdown.values.select { |v| v.to_i < 0 }
+
+    coeff = ->(n) { n >= 3 ? 2.0 : n == 2 ? 1.5 : 1.0 }
+
+    fake_score = fake_values.sum(&:to_i) * coeff.call(fake_values.size)
+    real_score = real_values.sum(&:to_i) * coeff.call(real_values.size)
+
+    total = (fake_score + real_score).round
 
     label = if total > FAKE_THRESHOLD
       "fake"

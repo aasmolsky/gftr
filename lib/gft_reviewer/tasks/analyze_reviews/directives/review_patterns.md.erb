@@ -53,24 +53,67 @@ Use these examples to calibrate your scoring. Each key matches a criterion from 
 
 ---
 
-### GENERIC_TEXT — no staff name, product, price, time, or concrete situation mentioned
+### GENERIC_TEXT — absence of specifics
+
+**Signal: the review contains zero verifiable facts.**
+Ask: what was repaired? what was bought? who helped? how much? how long?
+If none of these can be answered from the text → `GENERIC_TEXT`.
+
+Note: `GENERIC_TEXT` and `MARKETING_TONE` are **separate signals** and can both apply to the same review.
+- `GENERIC_TEXT` = no facts
+- `MARKETING_TONE` = exaggerated emotional tone
+
+**A real review contains at least one of:**
+- what was repaired / what product was bought / what service was performed
+- a specific price or price range ("заплатил 800 зл", "charged €120")
+- a waiting time ("waited 40 minutes", "ready same day")
+- a staff name or physical detail ("спасибо Марку", "the waiting room has free coffee")
+- a concrete problem described ("the brakes were grinding", "engine warning light was on")
+
+**If none of the above is present → GENERIC_TEXT applies.**
+
+**Obvious cases:**
 > "The service was great and I am very happy with the result."
 > "Everything went smoothly, no complaints at all."
 > "Very pleasant experience from start to finish."
 
+**Tricky cases — natural language, decent length, but still zero real detail:**
+> "Отличный автосервис. Ребята знают свое дело — все сделали быстро, качественно и без лишней воды. Приятное отношение к клиентам и адекватные цены. Теперь будем всей семьей обслуживать свои авто только здесь. Рекомендую от всей души!"
+> ← sounds authentic, but: no repair type, no price, no staff name, no waiting time — could be written by someone who was never there.
+
+> "Brilliant workshop! Fast, professional, fair price. Highly recommend to everyone."
+> ← three adjectives, no facts.
+
 ---
 
-### SUSPICIOUS_NEGATIVE — 1–2★ with thin account or generic text, possibly coordinated attack
-> "Terrible, never again." (author has 1 review, snippet 28 chars)
-> "Awful service, waste of money!" (author has 0 reviews, no details)
-> "Would not recommend to anyone." (generic, no specific incident described)
+### MARKETING_TONE — promotional or exaggerated language
 
----
+**Signal: the review reads like an advertisement, not a personal experience.**
+Key markers: superlatives without substance, emotional filler, generic recommendations.
+This is independent from `GENERIC_TEXT` — a review can have specific details AND marketing tone.
 
-### MARKETING_TONE — reads like promotional copy
 > "This is truly the best auto repair shop in the entire region, unmatched quality!"
 > "Incredible professionals offering a unique and unbeatable service experience."
 > "World-class results at an amazing price — there is simply no better option."
+> "Absolutely outstanding — I have never experienced anything like this before!"
+> "A hidden gem! The most talented team I have ever encountered, period."
+
+---
+
+### ALL_POSITIVE — only praise, zero negatives or caveats
+
+**Signal: not a single critical or neutral note in the entire review.**
+Real customers almost always mention at least something: a wait, a minor inconvenience, a caveat.
+A review with 100% praise and zero nuance is suspicious.
+
+Note: `ALL_POSITIVE` is the opposite of `BALANCED_TONE`.
+- `ALL_POSITIVE` (+10) = only positives → fake signal
+- `BALANCED_TONE` (−10) = both positives and negatives → real signal
+
+> "Everything was perfect — fast, professional, friendly, great price. Couldn't ask for more!"
+> "The team is amazing, the work is flawless, the price is unbeatable, the service is top notch."
+> "Fantastic in every way. The best experience I have ever had at any workshop."
+> "Быстро, качественно, вежливо, недорого. Всё понравилось, претензий нет вообще."
 
 ---
 

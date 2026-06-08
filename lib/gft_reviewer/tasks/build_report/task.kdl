@@ -9,4 +9,3 @@ task name="build_report" {
     }
   }
 }
-
