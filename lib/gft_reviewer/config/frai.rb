@@ -17,8 +17,9 @@ end
 Frai.autoload!(File.expand_path("..", __dir__))
 
 Frai.configure do |config|
-  config.project_root = File.expand_path("..", __dir__)
-  config.env          = ENV.fetch("FRAI_ENV", "production").to_sym
-  config.model        = ENV["LLM_MODEL"].to_s.strip.empty? ? nil : ENV["LLM_MODEL"]
-  config.api_key      = ENV["LLM_API_KEY"].to_s.strip.empty? ? nil : ENV["LLM_API_KEY"]
+  config.project_root    = File.expand_path("..", __dir__)
+  config.env             = ENV.fetch("FRAI_ENV", "production").to_sym
+  config.model           = ENV["LLM_MODEL"].to_s.strip.empty? ? nil : ENV["LLM_MODEL"]
+  config.api_key         = ENV["LLM_API_KEY"].to_s.strip.empty? ? nil : ENV["LLM_API_KEY"]
+  config.default_retries = 0
 end

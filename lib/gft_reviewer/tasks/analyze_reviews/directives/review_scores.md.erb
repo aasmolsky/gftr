@@ -24,7 +24,7 @@
 
 For every review, go through EVERY row of both scoring tables below — in order, one by one.
 For each row: answer the Check question. If YES → add the key to `score_breakdown`. If NO → skip it.
-Do not stop early. Do not skip rows. Process all 30 signals for every review.
+Do not stop early. Do not skip rows. Process all 25 signals for every review.
 
 The example below shows the structure only. Any key from the scoring table above may appear:
 
@@ -32,15 +32,14 @@ The example below shows the structure only. Any key from the scoring table above
 {
   "review_id": "string",
   "rating": "integer (1–5)",
-  "snippet": "string",
   "author_name": "string",
-  "score_breakdown": {
-    "THIN_ACCOUNT_1": 10,
-    "SHORT_TEXT": 10,
-    "GENERIC_TEXT": 20,
-    "FIVE_STAR_EMPTY": 15,
-    "EXPERIENCED_AUTHOR_5": -10
-  }
+  "score_breakdown": [
+    { "key": "THIN_ACCOUNT_1",      "value": 10 },
+    { "key": "SHORT_TEXT",          "value": 10 },
+    { "key": "GENERIC_TEXT",        "value": 20 },
+    { "key": "FIVE_STAR_EMPTY",     "value": 15 },
+    { "key": "EXPERIENCED_AUTHOR_5","value": -10 }
+  ]
 }
 ```
 

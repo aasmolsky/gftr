@@ -3,6 +3,8 @@
 require_relative "output_schema"
 
 module AnalyzeReviews
+  MAX_REVIEWS  = 25
+
   class Task < BaseTask
     schema do
       param :place_id,   type: String, required: true
@@ -13,7 +15,7 @@ module AnalyzeReviews
       use :review_scores
       use :review_patterns
 
-      output OutputSchema, validate: :validate_response!, retries: 2
+      output OutputSchema, validate: :validate_response!, retries: 0
     end
 
     private
@@ -21,15 +23,11 @@ module AnalyzeReviews
     def validate_response!(output, input)
       expected = Array(input[:reviews]).size
       actual   = Array(output[:processed_reviews]).size
-      if expected != actual
-        raise Frai::ValidationError,
-              "processed_reviews must contain #{expected} items, got #{actual}"
-      end
 
-      if output[:place_id].to_s != input[:place_id].to_s
-        raise Frai::ValidationError,
-              "place_id mismatch: expected #{input[:place_id]}, got #{output[:place_id]}"
-      end
+      return if expected == actual
+
+      raise Frai::ValidationError,
+            "processed_reviews must contain #{expected} items, got #{actual}"
     end
   end
 end

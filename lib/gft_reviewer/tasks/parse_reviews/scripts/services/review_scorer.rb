@@ -11,11 +11,11 @@ module ParseReviews
     def call
       breakdown = score_breakdown
 
-      return review.merge(computed_score: nil, label: 'fake') if forced_fake?(breakdown)
+      return review.merge(computed_score: nil, label: 'fake', score_breakdown: breakdown) if forced_fake?(breakdown)
 
       total = score_total(breakdown)
 
-      review.merge(computed_score: total, label: label_for(total))
+      review.merge(computed_score: total, label: label_for(total), score_breakdown: breakdown)
     end
 
     private
@@ -23,7 +23,12 @@ module ParseReviews
     attr_reader :review
 
     def score_breakdown
-      review[:score_breakdown] || {}
+      raw = review[:score_breakdown] || []
+      case raw
+      when Hash  then raw
+      when Array then raw.each_with_object({}) { |signal, h| h[signal[:key]] = signal[:value] }
+      else            {}
+      end
     end
 
     def forced_fake?(breakdown)

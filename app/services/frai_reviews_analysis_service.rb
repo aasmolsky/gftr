@@ -58,10 +58,8 @@ class FraiReviewsAnalysisService
   # ---------------------------------------------------------------------------
   # Build payload — normalize SERP reviews into the schema Task 1 expects
   # ---------------------------------------------------------------------------
-  MAX_REVIEWS = 30
-
   def build_payload(place_id:, language:, serp_result:)
-    reviews = Array(serp_result[:reviews]).first(MAX_REVIEWS).map { |r| normalize_review(r) }
+    reviews = Array(serp_result[:reviews]).first(AnalyzeReviews::MAX_REVIEWS).map { |r| normalize_review(r) }
     {
       place_id:   place_id,
       language:   language,

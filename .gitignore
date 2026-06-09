@@ -50,6 +50,9 @@ Thumbs.db
 *.sqlite3-wal
 *.sqlite3-journal
 
+# Sub-project locks
+/lib/gft_reviewer/Gemfile.lock
+
 # Node modules (if using JS)
 node_modules/
 yarn-error.log

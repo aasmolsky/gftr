@@ -3,17 +3,17 @@
 require "ruby_llm/schema"
 
 module AnalyzeReviews
-  class ScoreBreakdownSchema < RubyLLM::Schema
-    additional_properties true
+  class ScoreSignalSchema < RubyLLM::Schema
+    string  :key
+    integer :value
   end
 
   class ProcessedReviewSchema < RubyLLM::Schema
     string  :review_id
     integer :rating
     string  :author_name
-    string  :snippet
 
-    object :score_breakdown, of: ScoreBreakdownSchema
+    array :score_breakdown, of: AnalyzeReviews::ScoreSignalSchema
   end
 
   class OutputSchema < RubyLLM::Schema
@@ -21,12 +21,12 @@ module AnalyzeReviews
     string :language
 
     object :place_data do
-      string  :title,         required: false
-      number  :rating,        required: false
-      integer :reviews_count, required: false
-      string  :address,       required: false
+      string  :title
+      number  :rating
+      integer :reviews_count
+      string  :address
     end
 
-    array :processed_reviews, of: ProcessedReviewSchema
+    array :processed_reviews, of: AnalyzeReviews::ProcessedReviewSchema
   end
 end

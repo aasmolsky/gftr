@@ -14,6 +14,7 @@ gem "serpapi", "~> 1.0"
 # Environment variables
 gem "dotenv-rails"
 gem "importmap-rails"
+gem "propshaft"
 
 gem "bootsnap", require: false
 
