@@ -9,9 +9,11 @@ module BuildReport
       param :llm_data, type: String, required: true
 
       run :report do
-        input type: Hash
+        input   type: Hash
         returns :report, type: Hash
       end
+
+      output Hash
     end
   end
 end

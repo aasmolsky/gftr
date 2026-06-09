@@ -5,13 +5,7 @@ require_relative '../../spec_helper'
 RSpec.describe BuildReport::Task do
   describe '.call' do
     subject(:report) do
-      JSON.parse(
-        described_class.call(
-          data: data,
-          llm_data: llm_data
-        ),
-        symbolize_names: true
-      )
+      described_class.call(data: data, llm_data: llm_data)
     end
 
     let(:data) do

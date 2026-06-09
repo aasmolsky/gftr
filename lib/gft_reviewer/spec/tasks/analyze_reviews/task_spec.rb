@@ -45,15 +45,15 @@ RSpec.describe AnalyzeReviews::Task do
     it 'renders the expected prompt', :aggregate_failures do
       expect(prompt).to include('You are a review fraud scorer. Score and label every review in the input.')
       expect(prompt).to include('All text fields in your response must be written in ru.')
+      expect(prompt).to include('Score every review in processed_reviews. Do not skip any review.')
       expect(prompt).to include('## Review scoring rules')
       expect(prompt).to include('## Pattern examples')
-      expect(prompt).to include(place_data.to_json)
       expect(prompt).to include(reviews.to_json)
-      expect(prompt).to include('"place_id": "ChIJtest123"')
-      expect(prompt).to include('"language": "ru"')
       expect(prompt).to include('Reviews to score:')
       expect(prompt).to include('THIN_ACCOUNT_0')
       expect(prompt).to include('GENERIC_TEXT')
+      expect(prompt).not_to include('## Output schema')
+      expect(prompt).not_to include('Return ONLY valid JSON')
     end
   end
 end

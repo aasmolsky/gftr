@@ -54,16 +54,15 @@ bundle exec frai c          # console — only needed in bundler context
 bundle exec frai e TaskName # exec  — only needed in bundler context
 ```
 
-**Key point:** A standalone frai project (created with `frai new`) does **not** have `gem "frai"` in its Gemfile — frai must already be installed globally. The generated Gemfile only contains `rspec`.
+**Key point:** A standalone frai project (created with `frai new`) does **not** need a `Gemfile` — frai (and `rspec`) must already be installed globally via `gem install frai`.
 
 ---
 
 ## Getting started
 
 ```bash
-frai new my_project
-cd my_project
-bundle install              # installs rspec
+frai new gft_reviewer
+cd gft_reviewer
 cp .env.example .env        # fill in your secrets
 frai setup                  # register MCP servers with Claude CLI
 frai gt analyze_item        # generate your first task
@@ -72,8 +71,7 @@ frai gt analyze_item        # generate your first task
 **Generated structure:**
 
 ```
-my_project/
-  Gemfile                # rspec
+gft_reviewer/
   .rspec
   tasks/
     base_task.rb
@@ -218,7 +216,10 @@ All task declarations live inside `schema do ... end`:
 
 | Command | Description |
 |---------|-------------|
-| `llm false` | Skip the LLM call — return the rendered prompt as a string. Default: `true` |
+| `output :text` | Returns plain `String`. Required for every task |
+| `output Hash` | Returns a `Hash` parsed from JSON. Useful for script-only tasks |
+| `output YourSchema` | Returns a validated `Hash` via LLM structured output |
+| `llm false` | Skip the LLM call — return the rendered prompt as a string |
 | `mcp :name` | Declare an MCP server dependency. Server must exist in `mcp/name.rb` |
 | `const :name, value` | Define a constant available in directives as `<%= name %>` |
 | `param :name, type: T, required: true` | Declare a required input parameter |
@@ -316,7 +317,7 @@ tasks/
 
 ### Skipping the LLM call
 
-By default every task sends the rendered prompt to the LLM. Set `llm false` to return the rendered prompt as a string without calling the LLM — useful for template-only tasks, intermediate pipeline steps, or debugging:
+By default every task sends the rendered prompt to the LLM. Set `llm false` to skip the LLM call — useful for script-only steps, data transformation, or template rendering:
 
 ```ruby
 module BuildReport
@@ -327,20 +328,157 @@ module BuildReport
       param :data, type: Hash, required: true
 
       run :process do
-        input type: Hash
-        returns :report, type: String
+        input   type: Hash
+        returns :report, type: Hash
       end
+
+      output Hash   # directive renders JSON; Frai parses it back to Hash
     end
   end
 end
 ```
 
-| `llm` | Behaviour |
-|-------|-----------|
-| `true` (default) | render prompt → call LLM → return response |
-| `false` | render prompt → return prompt string |
+| `llm` | `output` | Returns |
+|-------|----------|---------|
+| `true` (default) | `:text` | LLM response as `String` |
+| `true` | `YourSchema` | LLM response as validated `Hash` |
+| `true` | `Hash` | LLM response parsed as `Hash` (no schema sent) |
+| `false` | `:text` | rendered directive as `String` |
+| `false` | `Hash` | rendered directive parsed as `Hash` |
+
+**`llm false` + `output Hash`** is the pattern for script-only tasks: the script builds a data structure, the directive renders it as JSON (`<%= result.to_json %>`), and Frai parses it back to a `Hash` — no LLM involved.
 
 The Ruby class stays minimal — all structure comes from `schema do ... end` in `task.rb`.
+
+---
+
+### Output (required)
+
+Every task must declare an `output` — it makes the return contract explicit. Without it, the class raises `Frai::MissingOutput` at load time.
+
+| Declaration | Returns | When to use |
+|-------------|---------|-------------|
+| `output :text` | `String` | prose, summaries, freeform LLM text |
+| `output Hash` | `Hash` | script-only tasks that render JSON — no schema needed |
+| `output YourSchema` | `Hash` | structured LLM output validated against a schema |
+
+#### Text output
+
+```ruby
+module Summarize
+  class Task < BaseTask
+    schema do
+      param :data, type: Hash, required: true
+
+      output :text
+    end
+  end
+end
+
+result = Summarize::Task.call(data: { ... })
+# => "The analysis shows..."   # String
+```
+
+#### Structured output
+
+Structured output uses a `RubyLLM::Schema` subclass. The schema is sent to the LLM as a structured format constraint (not injected into the prompt text). Frai validates the response, symbolizes all keys, and returns a `Hash`.
+
+```ruby
+require "ruby_llm/schema"
+
+module AnalyzeItem
+  class OutputSchema < RubyLLM::Schema
+    string :item_id
+    string :verdict
+
+    array :findings do
+      object do
+        string  :code
+        integer :severity
+        string  :description
+      end
+    end
+  end
+
+  class Task < BaseTask
+    schema do
+      param :item_id, type: String, required: true
+
+      output OutputSchema
+    end
+  end
+end
+
+result = AnalyzeItem::Task.call(item_id: "abc")
+# => { item_id: "abc", verdict: "ok", findings: [...] }   # Hash
+```
+
+#### Retries
+
+When parsing or validation fails, Frai appends the error to the original prompt and re-asks the LLM:
+
+```ruby
+output OutputSchema, retries: 2   # default is 2
+```
+
+After all retries are exhausted, `Frai::OutputRetriesExhaustedError` is raised.
+
+#### Output validation
+
+Add business-rule checks after the schema is parsed. Raise `Frai::ValidationError` to trigger a retry.
+
+The validator receives two arguments:
+- `output` — parsed, symbolized `Hash` (or `String` for `:text`)
+- `input` — task input params as a `Hash`
+
+**Inline block** — for short checks:
+
+```ruby
+output OutputSchema, retries: 2 do |output, input|
+  expected = Array(input[:items]).size
+  actual   = Array(output[:findings]).size
+
+  if expected != actual
+    raise Frai::ValidationError,
+          "findings must have #{expected} items, got #{actual}"
+  end
+end
+```
+
+**`validate:` — delegate to a private instance method:**
+
+```ruby
+output OutputSchema, validate: :validate_output!, retries: 2
+
+private
+
+def validate_output!(output, input)
+  expected = Array(input[:items]).size
+  actual   = Array(output[:findings]).size
+  return if expected == actual
+
+  raise Frai::ValidationError,
+        "findings must have #{expected} items, got #{actual}"
+end
+```
+
+**Block calling a private method** — block runs in the context of the task instance, so private methods are accessible:
+
+```ruby
+output OutputSchema, retries: 2 do |output, input|
+  validate_output!(output, input)
+end
+
+private
+
+def validate_output!(output, input)
+  # ...
+end
+```
+
+> `validate:` and a block cannot be declared together — Frai raises an error at class load time.
+
+---
 
 **MCP validation rules:**
 - Task declares `mcp :name` but `mcp/name.rb` is missing → error at startup
@@ -680,10 +818,10 @@ Removes the task directory and `.claude/commands/analyze_item.md`.
 Before deleting the project directory, clean up external artifacts:
 
 ```bash
-cd my_project
+cd gft_reviewer
 frai destroy
 cd ..
-rm -rf my_project
+rm -rf gft_reviewer
 ```
 
 ---
@@ -789,7 +927,7 @@ Frai projects include a `spec/` folder with a conventions spec out of the box. Y
 
 ### Setup
 
-Generated projects include `rspec` in their own `Gemfile` and a pre-generated `spec/spec_helper.rb`. No extra configuration needed — just run `bundle exec rspec` from the project root.
+Since `rspec` is a dependency of the `frai` gem itself, no separate `Gemfile` is needed. Generated projects include a pre-generated `spec/spec_helper.rb` — just run `rspec` from the project root.
 
 `spec/spec_helper.rb` is pre-generated:
 
@@ -809,19 +947,19 @@ end
 ### Running specs
 
 ```bash
-bundle exec rspec
+rspec
 ```
 
 Run a single file:
 
 ```bash
-bundle exec rspec spec/tasks/code_review_spec.rb
+rspec spec/tasks/code_review_spec.rb
 ```
 
 Run a single example by line number:
 
 ```bash
-bundle exec rspec spec/tasks/code_review_spec.rb:12
+rspec spec/tasks/code_review_spec.rb:12
 ```
 
 ### Testing a task
@@ -921,7 +1059,7 @@ Scripts can be written in any language (Ruby, Python, bash) — the spec only ca
 | LLM calls | Skipped — `FRAI_ENV=test` uses the Null adapter, returns rendered prompt |
 | MCP servers | Skipped entirely in test/development |
 | Scripts | Run as real subprocesses (they are standalone executables) |
-| `rspec` availability | Dev dependency of frai — no changes to the host project's Gemfile needed |
+| `rspec` availability | Runtime dependency of frai — available after `gem install frai`, no separate Gemfile needed |
 | `Frai.reset!` | Resets configuration between tests — prevents state leakage |
 
 

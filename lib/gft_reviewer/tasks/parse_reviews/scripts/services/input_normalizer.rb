@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
-require 'json'
-require_relative 'constants'
+require "json"
+require_relative "constants"
 
 module ParseReviews
   class InputNormalizer
@@ -11,7 +11,7 @@ module ParseReviews
 
     def call
       raw  = payload[:input]
-      data = parse_and_repair(raw)
+      data = normalize_input(raw)
       data = data[:analysis_result] if analysis_result?(data)
 
       {
@@ -30,18 +30,36 @@ module ParseReviews
       data.is_a?(Hash) && data[:analysis_result].is_a?(Hash)
     end
 
-    def parse_and_repair(str)
-      cleaned = str.to_s.gsub(/\A\s*```(?:json)?\s*/i, "").gsub(/\s*```\s*\z/, "").strip
-      begin
-        JSON.parse(cleaned, symbolize_names: true)
-      rescue JSON::ParserError
-        begin
-          fixed = cleaned.gsub(/,(\s*[}\]])/, '\1')
-          JSON.parse(fixed, symbolize_names: true)
-        rescue JSON::ParserError => e
-          raise "AnalyzeReviews returned malformed JSON: #{e.message}"
-        end
+    def normalize_input(raw)
+      case raw
+      when Hash
+        deep_symbolize(raw)
+      when String
+        parse_legacy_string(raw)
+      else
+        raise "AnalyzeReviews returned #{raw.class}, expected Hash"
       end
+    end
+
+    def deep_symbolize(value)
+      case value
+      when Hash
+        value.each_with_object({}) { |(key, nested), hash| hash[key.to_sym] = deep_symbolize(nested) }
+      when Array
+        value.map { |item| deep_symbolize(item) }
+      else
+        value
+      end
+    end
+
+    def parse_legacy_string(str)
+      cleaned = str.to_s.gsub(/\A\s*```(?:json)?\s*/i, "").gsub(/\s*```\s*\z/, "").strip
+      JSON.parse(cleaned, symbolize_names: true)
+    rescue JSON::ParserError
+      fixed = cleaned.gsub(/,(\s*[}\]])/, '\1')
+      JSON.parse(fixed, symbolize_names: true)
+    rescue JSON::ParserError => e
+      raise "AnalyzeReviews returned malformed JSON: #{e.message}"
     end
   end
 end

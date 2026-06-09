@@ -111,87 +111,31 @@ class FraiReviewsAnalysisService
   end
 
   # ---------------------------------------------------------------------------
-  # Normalize pipeline output (review_report) → frai_result_json the UI reads
+  # Normalize pipeline output (Hash from BuildReport) → frai_result_json
   # ---------------------------------------------------------------------------
-  def normalize_result(raw_result)
-    if raw_result.is_a?(Hash) && raw_result.key?(:_review_report)
-      return normalize_from_script(raw_result[:_review_report], raw_result[:_llm])
-    end
-
-    # Legacy: pipeline returned raw LLM string/hash
-    r = case raw_result
-        when Hash then raw_result.respond_to?(:deep_symbolize_keys) ? raw_result.deep_symbolize_keys : raw_result
-        else
-          cleaned = raw_result.to_s.gsub(/\A\s*```(?:json)?\s*/i, "").gsub(/\s*```\s*\z/, "").strip
-          JSON.parse(cleaned, symbolize_names: true)
-        end
-
-    total      = r[:analyzed_count].to_i
-    fake_count = r[:fake_count].to_i
-    real_count = r[:real_count].to_i
-
-    {
-      manipulation_assessment:  legacy_assessment(fake_count, real_count, total),
-      authenticity_score:       total.positive? ? (fake_count.to_f / total * 100).round : 0,
-      analyzed_ratings_count:   total,
-      fake_count:               fake_count,
-      real_count:               real_count,
-      uncertain_count:          r[:uncertain_count].to_i,
-      calculated_rating:        r[:declared_rating].to_f,
-      real_only_average_rating: r[:real_only_average_rating].to_f,
-      estimated_rating:         r[:estimated_rating].to_f,
-      rating_categories:        map_categories(r[:category_stats] || {}, total),
-      signal_summary:           r[:signal_summary] || {},
-      key_conclusions:          Array(r[:key_tendencies]),
-      language:                 r[:language].to_s
-    }
-  rescue JSON::ParserError, TypeError => e
-    raise "Pipeline returned non-parseable response: #{e.message}"
-  end
-
-  def normalize_from_script(report, llm_response)
-    report = report.respond_to?(:deep_symbolize_keys) ? report.deep_symbolize_keys : report
-
-    key_tendencies = []
-    if llm_response.is_a?(String)
-      begin
-        cleaned = llm_response.gsub(/\A\s*```(?:json)?\s*/i, "").gsub(/\s*```\s*\z/, "").strip
-        key_tendencies = Array(JSON.parse(cleaned, symbolize_names: true)[:key_tendencies])
-      rescue JSON::ParserError, TypeError
-        key_tendencies = []
-      end
-    end
+  def normalize_result(report)
+    total = report[:analyzed_count].to_i
 
     {
       manipulation_assessment:  report[:manipulation_assessment],
       authenticity_score:       report[:authenticity_score],
-      analyzed_ratings_count:   report[:analyzed_count],
-      fake_count:               report[:fake_count],
-      real_count:               report[:real_count],
-      uncertain_count:          report[:uncertain_count],
+      analyzed_ratings_count:   total,
+      fake_count:               report[:fake_count].to_i,
+      real_count:               report[:real_count].to_i,
+      uncertain_count:          report[:uncertain_count].to_i,
       calculated_rating:        report[:declared_rating].to_f,
       real_only_average_rating: report[:real_only_average_rating].to_f,
       estimated_rating:         report[:estimated_rating].to_f,
-      rating_categories:        report[:category_stats] || {},
+      rating_categories:        map_categories(report[:category_stats] || {}, total),
       signal_summary:           report[:signal_summary] || {},
-      key_conclusions:          key_tendencies,
+      key_conclusions:          Array(report[:key_tendencies]),
       language:                 report[:language].to_s
     }
   end
 
-  def legacy_assessment(fake_count, real_count, total)
-    return "looks_real" unless total.positive?
-    if fake_count.to_f / total > 0.25 then "untrusted"
-    elsif real_count.to_f / total > 0.8 then "trusted"
-    else "looks_real"
-    end
-  end
-
   def map_categories(category_stats, total)
-    cs = (category_stats || {}).respond_to?(:deep_symbolize_keys) ? category_stats.deep_symbolize_keys : category_stats
-
     %i[positive neutral negative].each_with_object({}) do |key, memo|
-      cat   = (cs[key] || {}).respond_to?(:deep_symbolize_keys) ? (cs[key] || {}).deep_symbolize_keys : (cs[key] || {})
+      cat   = category_stats[key] || {}
       count = cat[:total].to_i
       memo[key] = {
         count:                count,

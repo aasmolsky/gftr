@@ -5,12 +5,14 @@ module ParseReviews
     schema do
       llm false
 
-      param :llm_response, type: String, required: true
+      param :llm_response, type: Hash, required: true
 
       run :parse do
-        input type: String
+        input   type: Hash
         returns :parsed, type: Hash
       end
+
+      output Hash
     end
   end
 end

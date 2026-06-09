@@ -34,6 +34,10 @@ RSpec.describe "Project conventions" do
         it "responds to .call" do
           expect(klass).to respond_to(:call)
         end
+
+        it "declares output" do
+          expect([:text, :schema, :hash]).to include(klass._output_kind)
+        end
       end
     end
   end

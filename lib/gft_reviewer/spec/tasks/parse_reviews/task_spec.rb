@@ -59,7 +59,7 @@ RSpec.describe ParseReviews::Task do
     # real: r3(5★) + r5(4★) → avg = 4.5
     # estimated: (4.5*2 + 2.5*2) / 5 = 2.8
     context 'when a successful result is returned' do
-      subject(:report) { JSON.parse(result, symbolize_names: true) }
+      subject(:report) { result }
 
       it 'returns top-level metadata', :aggregate_failures do
         expect(report[:place_id]).to eq('ChIJtest123')
@@ -156,16 +156,31 @@ RSpec.describe ParseReviews::Task do
       end
     end
 
-    context 'when input is a raw LLM string with code fences' do
+    context 'when input is a structured Hash from AnalyzeReviews' do
+      subject(:report) do
+        described_class.call(llm_response: {
+          place_id:          'ChIJtest123',
+          language:          'en',
+          place_data:        place_data,
+          processed_reviews: reviews
+        })
+      end
+
+      it 'parses without string coercion' do
+        expect(report[:analyzed_count]).to eq(5)
+      end
+    end
+
+    context 'when input is a legacy JSON string' do
       subject(:report) do
         json = JSON.generate(
           place_id: 'ChIJtest123', language: 'en',
           place_data: place_data, processed_reviews: []
         )
-        JSON.parse(described_class.call(llm_response: "```json\n#{json}\n```"), symbolize_names: true)
+        described_class.call(llm_response: json)
       end
 
-      it 'strips fences and parses successfully' do
+      it 'coerces string params to Hash and parses successfully' do
         expect(report[:place_id]).to eq('ChIJtest123')
         expect(report[:analyzed_count]).to eq(0)
       end

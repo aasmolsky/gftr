@@ -5,6 +5,8 @@ module SummarizeReviews
     schema do
       param :data, type: Hash, required: true
       param :language, type: String, required: true
+
+      output :text
     end
   end
 end

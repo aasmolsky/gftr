@@ -1,6 +1,5 @@
 # frozen_string_literal: true
 
-require "json"
 require_relative "../tasks/summarize_reviews/task"
 
 module GftReviewer
@@ -13,10 +12,14 @@ module GftReviewer
         reviews:    input[:reviews]
       )
 
-      parsed_llm_data     = ParseReviews::Task.call(llm_response: llm_analyzed_data)
-      llm_summarized_data = SummarizeReviews::Task.call(data: parsed_llm_data, language: input[:language])
+      parsed_data = ParseReviews::Task.call(llm_response: llm_analyzed_data)
 
-      BuildReport::Task.call(data: parsed_llm_data, llm_data: llm_summarized_data)
+      llm_summarized_data = SummarizeReviews::Task.call(
+        data:     parsed_data,
+        language: input[:language]
+      )
+
+      BuildReport::Task.call(data: parsed_data, llm_data: llm_summarized_data)
     end
   end
 end
