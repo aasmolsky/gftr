@@ -28,6 +28,7 @@ RSpec.describe SummarizeReviews::Task do
         fake_count: 2,
         uncertain_count: 1,
         real_count: 7,
+        manipulation_assessment: 'untrusted',
         category_stats: {
           positive: { count: 6, real: 4, fake: 1, uncertain: 1, avg_rating: 4.8 },
           neutral:  { count: 2, real: 2, fake: 0, uncertain: 0, avg_rating: 3.0 },
@@ -41,13 +42,15 @@ RSpec.describe SummarizeReviews::Task do
       }
     end
 
-    it 'renders the expected summary prompt', :aggregate_failures do
-      expect(prompt).to include('You are a review analysis assistant. Use the structured review data below to write a concise, human-readable summary in en.')
-      expect(prompt).to include('Write 2–4 short paragraphs.')
-      expect(prompt).to include('Focus on the strongest numerical trends, suspicious patterns, and clear case statements supported by the data.')
-      expect(prompt).to include(data.to_json)
-      expect(prompt).to include('"language":"en"')
-      expect(prompt).to include('Do not return JSON, bullets, markdown headings, or tables.')
+    it 'renders an interpretive-only summary prompt', :aggregate_failures do
+      expect(prompt).to include('The factual summary (business name, address, ratings, counts) is shown separately')
+      expect(prompt).to include('Do NOT mention the business name, street address, declared rating')
+      expect(prompt).to include('Analysis data (patterns only):')
+      expect(prompt).to include('"category_stats"')
+      expect(prompt).to include('"signal_summary"')
+      expect(prompt).not_to include('Test St 1')
+      expect(prompt).not_to include('Test Garage')
+      expect(prompt).not_to include('Do not return JSON, bullets, markdown headings, or tables.')
     end
   end
 end

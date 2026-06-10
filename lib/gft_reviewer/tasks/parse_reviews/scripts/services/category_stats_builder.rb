@@ -1,11 +1,13 @@
 # frozen_string_literal: true
 
 require_relative 'constants'
+require_relative 'signal_presenter'
 
 module ParseReviews
   class CategoryStatsBuilder
-    def initialize(labeled_reviews)
+    def initialize(labeled_reviews, language:)
       @labeled_reviews = labeled_reviews
+      @language = language
       @total = labeled_reviews.size
     end
 
@@ -15,7 +17,7 @@ module ParseReviews
 
     private
 
-    attr_reader :labeled_reviews
+    attr_reader :labeled_reviews, :language
 
     def bucketize
       buckets = { positive: [], neutral: [], negative: [] }
@@ -81,8 +83,13 @@ module ParseReviews
         snippet: review[:snippet],
         label: review[:label],
         computed_score: review[:computed_score],
-        score_breakdown: review[:score_breakdown] || {}
+        score_breakdown: review[:score_breakdown] || {},
+        display_signals: signal_presenter.call(review[:score_breakdown] || {})
       }
+    end
+
+    def signal_presenter
+      @signal_presenter ||= SignalPresenter.new(language)
     end
   end
 end

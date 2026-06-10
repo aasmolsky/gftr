@@ -66,8 +66,18 @@
       <% public_data = (@last_request&.place_data_json || {}).with_indifferent_access %>
       <% analysis    = (@last_request&.frai_result_json || (@last_analysis.is_a?(Hash) ? @last_analysis : {})).with_indifferent_access %>
       <% assessment  = analysis[:manipulation_assessment].to_s %>
-      <% verdict_color = assessment == "untrusted" ? "#dc2626" : assessment == "trusted" ? "#059669" : "#b45309" %>
-      <% verdict_label = assessment == "untrusted" ? "🔴 Untrusted" : assessment == "trusted" ? "🟢 Trusted" : "🟡 Like Truth" %>
+      <% verdict_label = case assessment
+         when "untrusted" then "🔴 Untrusted"
+         when "trusted" then "🟢 Trusted"
+         when "looks_real" then "🟡 Looks Real"
+         when "mixed" then "🟡 Mixed"
+         else "🟡 #{assessment.tr('_', ' ').capitalize}"
+         end %>
+      <% verdict_color = case assessment
+         when "untrusted" then "#dc2626"
+         when "trusted" then "#059669"
+         else "#b45309"
+         end %>
       <% rc = (analysis[:rating_categories] || {}).with_indifferent_access %>
 
       <%# ── 1. HEADER ── %>
@@ -154,13 +164,24 @@
                       </span>
                     </div>
                     <div style="color:#374151; margin-bottom:0.3rem;"><%= rev[:snippet] %></div>
+                    <% display_signals = Array(rev[:display_signals]).map { |signal| signal.with_indifferent_access } %>
                     <% breakdown = (rev[:score_breakdown] || {}).with_indifferent_access %>
-                    <% if breakdown.any? %>
+                    <% if display_signals.any? || breakdown.any? %>
                       <div style="display:flex; flex-wrap:wrap; gap:0.3rem; margin-top:0.25rem;">
-                        <% breakdown.each do |key, val| %>
-                          <span style="font-size:0.7rem; padding:0.1rem 0.35rem; border-radius:0.25rem; background:<%= val.to_i > 0 ? '#fee2e2' : '#dcfce7' %>; color:<%= val.to_i > 0 ? '#991b1b' : '#166534' %>;">
-                            <%= key %> <%= val.to_i > 0 ? "+#{val}" : val %>
-                          </span>
+                        <% if display_signals.any? %>
+                          <% display_signals.each do |signal| %>
+                            <% negative = signal[:kind].to_s == "negative" %>
+                            <span style="font-size:0.7rem; padding:0.1rem 0.35rem; border-radius:0.25rem; background:<%= negative ? '#fee2e2' : '#dcfce7' %>; color:<%= negative ? '#991b1b' : '#166534' %>;">
+                              <%= signal[:text] %>
+                            </span>
+                          <% end %>
+                        <% else %>
+                          <% breakdown.each do |key, val| %>
+                            <% negative = val.to_i > 0 %>
+                            <span style="font-size:0.7rem; padding:0.1rem 0.35rem; border-radius:0.25rem; background:<%= negative ? '#fee2e2' : '#dcfce7' %>; color:<%= negative ? '#991b1b' : '#166534' %>;">
+                              <%= key.to_s.tr('_', ' ').capitalize %>
+                            </span>
+                          <% end %>
                         <% end %>
                       </div>
                     <% end %>
@@ -251,7 +272,7 @@
         { n: "3", title: "AI Reads Every Review",
           body: "Each review is analyzed individually — language style, author profile, timing, edit history and more." },
         { n: "4", title: "Get Your Trust Report",
-          body: "See the verdict (Trusted / Like Truth / Untrusted), fake counts per rating tier and key AI conclusions." }
+          body: "See the verdict (Trusted / Looks Real / Untrusted), fake counts per rating tier and key AI conclusions." }
       ].each do |step| %>
         <div style="display:flex; align-items:flex-start; gap:1rem;">
           <div style="min-width:2rem; height:2rem; background:var(--primary-gradient); border-radius:50%;

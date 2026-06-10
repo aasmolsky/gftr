@@ -54,7 +54,9 @@ RSpec.describe BuildReport::Task do
       expect(report[:analyzed_count]).to eq(10)
       expect(report[:category_stats]).to eq(data[:category_stats])
       expect(report[:signal_summary]).to eq(data[:signal_summary])
-      expect(report[:key_tendencies]).to eq([
+      expect(report[:key_tendencies].first).to include('Test Garage')
+      expect(report[:key_tendencies].first).to include('Test St 1')
+      expect(report[:key_tendencies].drop(1)).to eq([
         'Many reviews use generic praise without concrete details.',
         'Unusually fast owner replies to negative reviews stand out.'
       ])

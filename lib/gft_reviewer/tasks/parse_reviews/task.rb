@@ -5,7 +5,9 @@ module ParseReviews
     schema do
       llm false
 
-      param :llm_response, type: Hash, required: true
+      param :llm_response,   type: Hash, required: true
+      param :source_reviews, type: Array, default: []
+      param :place_data,     type: Hash,   required: true
 
       run :parse do
         input   type: Hash

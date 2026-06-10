@@ -28,7 +28,7 @@ module ParseReviews
         fake_count:              fake,
         uncertain_count:         count_by_label('uncertain'),
         real_count:              real,
-        category_stats:          CategoryStatsBuilder.new(labeled_reviews).call,
+        category_stats:          CategoryStatsBuilder.new(labeled_reviews, language: input[:language]).call,
         signal_summary:          SignalSummaryBuilder.new(labeled_reviews).call
       }
     end
@@ -40,7 +40,7 @@ module ParseReviews
     def derive_assessment(fake_count, real_count, total)
       return 'looks_real' unless total.positive?
 
-      if fake_count.to_f / total > 0.25
+      if fake_count.to_f / total >= 0.25
         'untrusted'
       elsif real_count.to_f / total > 0.8
         'trusted'

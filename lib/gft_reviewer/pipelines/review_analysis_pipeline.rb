@@ -12,14 +12,18 @@ module GftReviewer
         reviews:    input[:reviews]
       )
 
-      parsed_data = ParseReviews::Task.call(llm_response: llm_analyzed_data)
+      parsed_data = ParseReviews::Task.call(
+        llm_response:   llm_analyzed_data,
+        source_reviews: input[:reviews],
+        place_data:     input[:place_data]
+      )
 
-      llm_summarized_data = SummarizeReviews::Task.call(
+      interpretation = SummarizeReviews::Task.call(
         data:     parsed_data,
         language: input[:language]
       )
 
-      BuildReport::Task.call(data: parsed_data, llm_data: llm_summarized_data)
+      BuildReport::Task.call(data: parsed_data, llm_data: interpretation)
     end
   end
 end

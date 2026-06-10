@@ -61,9 +61,12 @@ RSpec.describe GftReviewer::ReviewAnalysisPipeline do
       )
 
       expect(report[:place_id]).to eq("ChIJtest123")
+      expect(report[:place_data][:title]).to eq("Test Garage")
       expect(report[:analyzed_count]).to eq(2)
       expect(report[:fake_count]).to eq(1)
-      expect(report[:key_tendencies]).to eq(summary_text.split(/\n{2,}/).map(&:strip))
+      expect(report[:key_tendencies].first).to include("Test Garage")
+      expect(report[:key_tendencies].first).to include("Test St 1")
+      expect(report[:key_tendencies].last).to eq("Negative feedback looks more specific than positive clusters.")
     end
   end
 end

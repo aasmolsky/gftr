@@ -20,9 +20,10 @@ RSpec.describe ParseReviews::Task do
         llm_response: JSON.generate(
           place_id:          'ChIJtest123',
           language:          'en',
-          place_data:        place_data,
+          place_data:        { title: 'Wrong Title', rating: 1.0, reviews_count: 1, address: 'Fake St' },
           processed_reviews: reviews
-        )
+        ),
+        place_data: place_data
       )
     end
 
@@ -109,7 +110,18 @@ RSpec.describe ParseReviews::Task do
             pos = report[:category_stats][:positive]
             entry = pos[:suspicious_reviews].first
             expect(entry.keys).to include(:review_id, :author_name, :rating,
-                                          :snippet, :label, :computed_score, :score_breakdown)
+                                          :snippet, :label, :computed_score, :score_breakdown, :display_signals)
+          end
+
+          it 'adds human-readable display_signals for UI' do
+            pos = report[:category_stats][:positive]
+            entry = pos[:suspicious_reviews].find { |review| review[:review_id] == 'r2' }
+            texts = Array(entry[:display_signals]).map { |signal| signal[:text] }
+
+            expect(texts).to include('Few concrete details')
+            expect(texts).to include('Uniformly positive tone')
+            kinds = Array(entry[:display_signals]).map { |signal| signal[:kind] }
+            expect(kinds).to all(eq('negative'))
           end
         end
 
@@ -156,18 +168,75 @@ RSpec.describe ParseReviews::Task do
       end
     end
 
+    context 'when LLM output lacks snippets' do
+      subject(:report) do
+        described_class.call(
+          llm_response: {
+            place_id:          'ChIJtest123',
+            language:          'en',
+            place_data:        { title: 'Wrong', rating: 0, reviews_count: 0, address: 'Wrong' },
+            processed_reviews: [
+              {
+                review_id: 'r1', rating: 5, author_name: 'Alice',
+                score_breakdown: { 'THIN_ACCOUNT_0' => 15, 'SHORT_TEXT' => 10 }
+              }
+            ]
+          },
+          source_reviews: [
+            { review_id: 'r1', snippet: 'Very detailed review text from SerpAPI' }
+          ],
+          place_data: place_data
+        )
+      end
+
+      it 'restores snippets from source_reviews into suspicious_reviews' do
+        pos = report[:category_stats][:positive]
+        snippet = pos[:suspicious_reviews].find { |r| r[:review_id] == 'r1' }&.dig(:snippet)
+        expect(snippet).to eq('Very detailed review text from SerpAPI')
+      end
+    end
+
     context 'when input is a structured Hash from AnalyzeReviews' do
       subject(:report) do
-        described_class.call(llm_response: {
-          place_id:          'ChIJtest123',
-          language:          'en',
-          place_data:        place_data,
-          processed_reviews: reviews
-        })
+        described_class.call(
+          llm_response: {
+            place_id:          'ChIJtest123',
+            language:          'en',
+            place_data:        { title: 'Wrong', rating: 0 },
+            processed_reviews: reviews
+          },
+          place_data: place_data
+        )
       end
 
       it 'parses without string coercion' do
         expect(report[:analyzed_count]).to eq(5)
+      end
+    end
+
+    context 'when analysis language is russian' do
+      it 'localizes display signals to russian' do
+        report = described_class.call(
+          llm_response: {
+            place_id: 'ChIJtest123',
+            language: 'ru',
+            place_data: { title: 'Wrong', rating: 0 },
+            processed_reviews: [
+              {
+                review_id: 'r1',
+                rating: 5,
+                author_name: 'Alice',
+                score_breakdown: { 'THIN_ACCOUNT_0' => 15, 'SHORT_TEXT' => 10 }
+              }
+            ]
+          },
+          place_data: place_data
+        )
+
+        signals = Array(report.dig(:category_stats, :positive, :suspicious_reviews, 0, :display_signals))
+        texts = signals.map { |signal| signal[:text] }
+        expect(texts).to include('Небольшая история отзывов')
+        expect(signals).to all(include(kind: 'negative'))
       end
     end
 
@@ -177,7 +246,7 @@ RSpec.describe ParseReviews::Task do
           place_id: 'ChIJtest123', language: 'en',
           place_data: place_data, processed_reviews: []
         )
-        described_class.call(llm_response: json)
+        described_class.call(llm_response: json, place_data: place_data)
       end
 
       it 'coerces string params to Hash and parses successfully' do
@@ -189,7 +258,7 @@ RSpec.describe ParseReviews::Task do
     context 'when input has trailing-comma malformed JSON' do
       it 'repairs and parses successfully' do
         json = "{\"place_id\":\"x\",\"language\":\"en\",\"place_data\":{},\"processed_reviews\":[]}"
-        expect { described_class.call(llm_response: json) }.not_to raise_error
+        expect { described_class.call(llm_response: json, place_data: place_data) }.not_to raise_error
       end
     end
   end
