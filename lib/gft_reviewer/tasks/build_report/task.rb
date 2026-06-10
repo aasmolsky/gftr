@@ -1,16 +1,19 @@
 # frozen_string_literal: true
 
+require_relative "schemas/data_schema"
+require_relative "schemas/report_schema"
+
 module BuildReport
   class Task < BaseTask
     schema do
       llm false
 
-      param :data,     type: Hash,   required: true
+      param :data, type: Hash, validate: BuildReport::Schemas::DataSchema
       param :llm_data, type: String, required: true
 
       run :report do
-        input   type: Hash
-        returns :report, type: Hash
+        input type: Hash, validate: BuildReport::Schemas::DataSchema
+        returns :report, validate: BuildReport::Schemas::ReportSchema
       end
 
       output Hash

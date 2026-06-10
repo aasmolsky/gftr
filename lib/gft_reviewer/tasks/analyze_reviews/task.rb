@@ -9,7 +9,12 @@ module AnalyzeReviews
     schema do
       param :place_id,   type: String, required: true
       param :language,   type: String, required: true
-      param :place_data, type: Hash,   required: true
+      param :place_data, type: Hash,   required: true do
+        required(:title).filled(:string)
+        required(:rating).filled(:float)
+        required(:reviews_count).filled(:integer)
+        required(:address).filled(:string)
+      end
       param :reviews,    type: Array,  required: true
 
       use :review_scores

@@ -61,8 +61,8 @@ bundle exec frai e TaskName # exec  — only needed in bundler context
 ## Getting started
 
 ```bash
-frai new gft_reviewer
-cd gft_reviewer
+frai new my_project
+cd my_project
 cp .env.example .env        # fill in your secrets
 frai setup                  # register MCP servers with Claude CLI
 frai gt analyze_item        # generate your first task
@@ -71,7 +71,7 @@ frai gt analyze_item        # generate your first task
 **Generated structure:**
 
 ```
-gft_reviewer/
+my_project/
   .rspec
   tasks/
     base_task.rb
@@ -224,8 +224,45 @@ All task declarations live inside `schema do ... end`:
 | `const :name, value` | Define a constant available in directives as `<%= name %>` |
 | `param :name, type: T, required: true` | Declare a required input parameter |
 | `param :name, type: T, default: val` | Declare an optional input parameter with default |
+| `param :name, type: Hash do ... end` | Declare a Hash param with explicit key schema |
 | `use :name` | Include a sub-directive (`directives/name.md.erb`) |
-| `run :name do ... end` | Declare a script (`scripts/name.rb`) with input/returns |
+| `run :name do ... end` | Declare a script with typed input and return schema |
+
+### Hash params with key schema
+
+`type: Hash` **requires** an explicit key declaration — either a block or a `validate:` contract. Omitting it raises an `ArgumentError` at load time.
+
+The block is evaluated directly as a [`dry-schema`](https://dry-rb.org/gems/dry-schema) schema:
+
+**Option 1 — inline block:**
+
+```ruby
+param :place_data, type: Hash do
+  required(:name).filled(:string)
+  required(:rating).filled(:float)
+  required(:address).filled(:string)
+end
+
+param :options, type: Hash, required: false, default: {} do
+  required(:language).filled(:string)
+  optional(:max_count).filled(:integer)
+end
+```
+
+**Option 2 — pre-defined schema:**
+
+```ruby
+PlaceDataSchema = Dry::Schema.define do
+  required(:name).filled(:string)
+  required(:rating).filled(:float)
+end
+
+param :place_data, type: Hash, validate: PlaceDataSchema
+```
+
+Any object responding to `.call(hash)` → `.success?` / `.errors` works as `validate:`.
+
+`validate:` and a block cannot be used together.
 
 ### Understanding `run` blocks (scripts)
 
@@ -235,9 +272,52 @@ Scripts are the mechanism for gathering external data. Each `run` block declares
 
 ```ruby
 run :fetch_diff do
-  input type: String              # What type of data the script receives
-  returns :diff, type: String     # What field to capture from script output
+  input type: String              # scalar type — no block needed
+  returns :diff, type: String
 end
+```
+
+When the type is `Hash`, a dry-schema block is required:
+
+```ruby
+run :parse do
+  input type: Hash do
+    required(:place_id).filled(:string)
+    required(:processed_reviews).filled(:array)
+  end
+  returns :parsed, type: Hash do
+    required(:place_id).filled(:string)
+    required(:score).filled(:integer)
+    required(:status).filled(:string)
+  end
+end
+```
+
+**`input` / `returns` rules:**
+
+```ruby
+# ✓ scalar type — block not needed
+input type: String
+returns :diff, type: String
+
+# ✓ Hash — type: Hash is explicit, block is required
+input type: Hash do
+  required(:place_id).filled(:string)
+  required(:processed_reviews).filled(:array)
+end
+
+returns :parsed, type: Hash do
+  required(:place_id).filled(:string)
+  required(:score).filled(:integer)
+end
+
+# ✗ block without type: → ArgumentError at load time
+input do ... end
+returns :name do ... end
+
+# ✗ type: Hash without block → ArgumentError at load time
+input type: Hash
+returns :name, type: Hash
 ```
 
 **How it executes:**
@@ -283,7 +363,9 @@ module CodeReview
 
       use :context do
         run :fetch_diff do
-          input type: String
+          input do
+            task_id String
+          end
           returns :diff, type: String
         end
       end
@@ -418,7 +500,15 @@ result = AnalyzeItem::Task.call(item_id: "abc")
 When parsing or validation fails, Frai appends the error to the original prompt and re-asks the LLM:
 
 ```ruby
-output OutputSchema, retries: 2   # default is 2
+output OutputSchema, retries: 2   # override per task
+```
+
+The default number of retries is configured globally:
+
+```ruby
+Frai.configure do |config|
+  config.default_retries = 0  # 0 = one attempt, no retries (default)
+end
 ```
 
 After all retries are exhausted, `Frai::OutputRetriesExhaustedError` is raised.
@@ -448,7 +538,7 @@ end
 **`validate:` — delegate to a private instance method:**
 
 ```ruby
-output OutputSchema, validate: :validate_output!, retries: 2
+output OutputSchema, validate: :validate_output!
 
 private
 
@@ -465,7 +555,7 @@ end
 **Block calling a private method** — block runs in the context of the task instance, so private methods are accessible:
 
 ```ruby
-output OutputSchema, retries: 2 do |output, input|
+output OutputSchema do |output, input|
   validate_output!(output, input)
 end
 
@@ -818,10 +908,10 @@ Removes the task directory and `.claude/commands/analyze_item.md`.
 Before deleting the project directory, clean up external artifacts:
 
 ```bash
-cd gft_reviewer
+cd my_project
 frai destroy
 cd ..
-rm -rf gft_reviewer
+rm -rf my_project
 ```
 
 ---
