@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-module ParseReviews
+module PrepareLLMReport
   class SignalSummaryBuilder
     def initialize(labeled_reviews)
       @labeled_reviews = labeled_reviews

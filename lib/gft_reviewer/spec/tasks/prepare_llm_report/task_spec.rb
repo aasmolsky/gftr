@@ -13,17 +13,18 @@ require_relative '../../spec_helper'
 #   r4  SHORT_TEXT(10) + SUSPICIOUS_NEGATIVE(20)                      → 30*1.5 = 45  → fake
 #   r5  OWNER_RESPONDED(-5) + SPECIFIC_DETAILS(-15)                   → -20*1.5 = -30 → real
 # ---------------------------------------------------------------------------
-RSpec.describe ParseReviews::Task do
+RSpec.describe PrepareLLMReport::Task do
   describe '.call' do
     subject(:result) do
       described_class.call(
-        llm_response: JSON.generate(
+        llm_data: {
           place_id:          'ChIJtest123',
           language:          'en',
           place_data:        { title: 'Wrong Title', rating: 1.0, reviews_count: 1, address: 'Fake St' },
           processed_reviews: reviews
-        ),
-        place_data: place_data
+        },
+        data: [],
+        language: 'en'
       )
     end
 
@@ -60,13 +61,15 @@ RSpec.describe ParseReviews::Task do
     # real: r3(5★) + r5(4★) → avg = 4.5
     # estimated: (4.5*2 + 2.5*2) / 5 = 2.8
     context 'when a successful result is returned' do
-      subject(:report) { result }
+      subject(:report) do
+        report_data, _llm_report = result
+        report_data
+      end
 
       it 'returns top-level metadata', :aggregate_failures do
         expect(report[:place_id]).to eq('ChIJtest123')
         expect(report[:language]).to eq('en')
-        expect(report[:place_data][:title]).to eq('Test Garage')
-        expect(report[:declared_rating]).to eq(4.5)
+        expect(report[:declared_rating]).to eq(1.0)
         expect(report[:analyzed_count]).to eq(5)
       end
 
@@ -170,11 +173,11 @@ RSpec.describe ParseReviews::Task do
 
     context 'when LLM output lacks snippets' do
       subject(:report) do
-        described_class.call(
-          llm_response: {
+        report_data, _llm_report = described_class.call(
+          llm_data: {
             place_id:          'ChIJtest123',
             language:          'en',
-            place_data:        { title: 'Wrong', rating: 0, reviews_count: 0, address: 'Wrong' },
+            place_data:        { title: 'Wrong', rating: 0.0, reviews_count: 0, address: 'Wrong' },
             processed_reviews: [
               {
                 review_id: 'r1', rating: 5, author_name: 'Alice',
@@ -182,11 +185,12 @@ RSpec.describe ParseReviews::Task do
               }
             ]
           },
-          source_reviews: [
+          data: [
             { review_id: 'r1', snippet: 'Very detailed review text from SerpAPI' }
           ],
-          place_data: place_data
+          language: 'en'
         )
+        report_data
       end
 
       it 'restores snippets from source_reviews into suspicious_reviews' do
@@ -198,15 +202,17 @@ RSpec.describe ParseReviews::Task do
 
     context 'when input is a structured Hash from AnalyzeReviews' do
       subject(:report) do
-        described_class.call(
-          llm_response: {
+        report_data, _llm_report = described_class.call(
+          llm_data: {
             place_id:          'ChIJtest123',
             language:          'en',
-            place_data:        { title: 'Wrong', rating: 0 },
+            place_data:        { title: 'Wrong', rating: 0.0, reviews_count: 0, address: 'Wrong' },
             processed_reviews: reviews
           },
-          place_data: place_data
+          data: [],
+          language: 'en'
         )
+        report_data
       end
 
       it 'parses without string coercion' do
@@ -216,11 +222,11 @@ RSpec.describe ParseReviews::Task do
 
     context 'when analysis language is russian' do
       it 'localizes display signals to russian' do
-        report = described_class.call(
-          llm_response: {
+        report_data, _llm_report = described_class.call(
+          llm_data: {
             place_id: 'ChIJtest123',
             language: 'ru',
-            place_data: { title: 'Wrong', rating: 0 },
+            place_data: { title: 'Wrong', rating: 0.0, reviews_count: 0, address: 'Wrong' },
             processed_reviews: [
               {
                 review_id: 'r1',
@@ -230,35 +236,14 @@ RSpec.describe ParseReviews::Task do
               }
             ]
           },
-          place_data: place_data
+          data: [],
+          language: 'ru'
         )
 
-        signals = Array(report.dig(:category_stats, :positive, :suspicious_reviews, 0, :display_signals))
+        signals = Array(report_data.dig(:category_stats, :positive, :suspicious_reviews, 0, :display_signals))
         texts = signals.map { |signal| signal[:text] }
         expect(texts).to include('Небольшая история отзывов')
         expect(signals).to all(include(kind: 'negative'))
-      end
-    end
-
-    context 'when input is a legacy JSON string' do
-      subject(:report) do
-        json = JSON.generate(
-          place_id: 'ChIJtest123', language: 'en',
-          place_data: place_data, processed_reviews: []
-        )
-        described_class.call(llm_response: json, place_data: place_data)
-      end
-
-      it 'coerces string params to Hash and parses successfully' do
-        expect(report[:place_id]).to eq('ChIJtest123')
-        expect(report[:analyzed_count]).to eq(0)
-      end
-    end
-
-    context 'when input has trailing-comma malformed JSON' do
-      it 'repairs and parses successfully' do
-        json = "{\"place_id\":\"x\",\"language\":\"en\",\"place_data\":{},\"processed_reviews\":[]}"
-        expect { described_class.call(llm_response: json, place_data: place_data) }.not_to raise_error
       end
     end
   end

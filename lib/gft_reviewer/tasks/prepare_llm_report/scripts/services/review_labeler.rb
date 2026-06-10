@@ -2,7 +2,7 @@
 
 require_relative 'review_scorer'
 
-module ParseReviews
+module PrepareLLMReport
   class ReviewLabeler
     def initialize(reviews)
       @reviews = reviews

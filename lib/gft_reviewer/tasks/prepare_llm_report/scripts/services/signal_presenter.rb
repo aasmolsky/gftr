@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-module ParseReviews
+module PrepareLLMReport
   class SignalPresenter
     LABELS = {
       "en" => {

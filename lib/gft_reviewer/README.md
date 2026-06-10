@@ -227,6 +227,7 @@ All task declarations live inside `schema do ... end`:
 | `param :name, type: Hash do ... end` | Declare a Hash param with explicit key schema |
 | `use :name` | Include a sub-directive (`directives/name.md.erb`) |
 | `run :name do ... end` | Declare a script with typed input and return schema |
+| `script_results[:name]` | Access script output in overridden `call` after `super` |
 
 ### Hash params with key schema
 
@@ -340,7 +341,38 @@ Review this code:
 - `params: :task_id` — pass the `task_id` param to the script
 - `return: :diff` — extract the `diff` field from script's JSON output
 
-### Full example
+### Accessing script results after the LLM call
+
+Sometimes you need both the script result **and** the LLM response as the final output. Override `call`, invoke `super`, then read `script_results` — a `Hash` keyed by script name, populated automatically after the directive is rendered:
+
+```ruby
+class Blacklist::Task < BaseTask
+  schema do
+    param :comment,    type: String
+    param :conditions, type: Hash do
+      required(:signal_summary).filled(:string)
+    end
+
+    run :parse_input do
+      input type: Hash
+    end
+
+    output Hash
+  end
+
+  def call(input)
+    llm_result = super                          # renders prompt, runs scripts, calls LLM
+    parsed     = script_results[:prepared_data] # keyed by return: key declared in the directive
+    [parsed, llm_result]
+  end
+end
+```
+
+`script_results` is keyed by the **return key** declared in the directive — the same name you pass to `return:` in `% run(...)`. If the directive has `% run(:prepare_data, params: :place_id, return: :prepared_data)`, the value is already extracted: `script_results[:prepared_data]` gives you `{ place_id: ..., ... }` directly.
+
+`script_results` returns `{}` when no `run(...)` was called during directive rendering (e.g. the directive template doesn't reference the script).
+
+
 
 `task.rb` is the **contract** — params, constants, MCPs, sub-directives, and scripts are all declared in `schema do ... end`.
 

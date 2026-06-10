@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+require_relative "schemas/input_schema"
 require_relative "schemas/data_schema"
 require_relative "schemas/report_schema"
 
@@ -12,7 +13,7 @@ module BuildReport
       param :llm_data, type: String, required: true
 
       run :report do
-        input type: Hash, validate: BuildReport::Schemas::DataSchema
+        input type: Hash, validate: BuildReport::Schemas::ReportInputSchema
         returns :report, validate: BuildReport::Schemas::ReportSchema
       end
 

@@ -7,6 +7,6 @@
 require 'json'
 require_relative 'services/runner'
 payload = JSON.parse($stdin.read, symbolize_names: true)
-parsed = ParseReviews::Runner.call(payload)
+parsed = PrepareLLMReport::Runner.call(payload)
 
-puts JSON.generate(parsed: parsed)
+puts JSON.generate(prepared_data: parsed)

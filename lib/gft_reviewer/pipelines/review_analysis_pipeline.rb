@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-require_relative "../tasks/summarize_reviews/task"
+require_relative "../tasks/prepare_llm_report/task"
 
 module GftReviewer
   class ReviewAnalysisPipeline < BasePipeline
@@ -12,18 +12,13 @@ module GftReviewer
         reviews:    input[:reviews]
       )
 
-      parsed_data = ParseReviews::Task.call(
-        llm_response:   llm_analyzed_data,
-        source_reviews: input[:reviews],
-        place_data:     input[:place_data]
-      )
-
-      interpretation = SummarizeReviews::Task.call(
-        data:     parsed_data,
+      report_data, llm_report = PrepareLLMReport::Task.call(
+        llm_data: llm_analyzed_data,
+        data:     { place_data: input[:place_data], reviews: input[:reviews] },
         language: input[:language]
       )
 
-      BuildReport::Task.call(data: parsed_data, llm_data: interpretation)
+      BuildReport::Task.call(data: report_data, llm_data: llm_report)
     end
   end
 end

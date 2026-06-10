@@ -32,6 +32,25 @@ RSpec.describe GftReviewer::ReviewAnalysisPipeline do
       }
     end
 
+    let(:parsed_data) do
+      {
+        place_id:                input[:place_id],
+        language:                input[:language],
+        place_data:              input[:place_data],
+        declared_rating:         4.5,
+        manipulation_assessment: "untrusted",
+        authenticity_score:      50,
+        real_only_average_rating: 4.5,
+        estimated_rating:        3.5,
+        analyzed_count:          2,
+        fake_count:              1,
+        uncertain_count:         0,
+        real_count:              1,
+        category_stats:          { positive: { total: 2, real: 1, fake: 1 }, neutral: { total: 0 }, negative: { total: 0 } },
+        signal_summary:          { GENERIC_TEXT: 1, SHORT_TEXT: 1 }
+      }
+    end
+
     let(:summary_text) do
       <<~TEXT.strip
         Generic praise appears in several five-star reviews.
@@ -42,7 +61,7 @@ RSpec.describe GftReviewer::ReviewAnalysisPipeline do
 
     before do
       allow(AnalyzeReviews::Task).to receive(:call).and_return(analyzed_data)
-      allow(SummarizeReviews::Task).to receive(:call).and_return(summary_text)
+      allow(PrepareLLMReport::Task).to receive(:call).and_return([parsed_data, summary_text])
     end
 
     it "chains tasks and returns final report JSON", :aggregate_failures do
@@ -55,8 +74,9 @@ RSpec.describe GftReviewer::ReviewAnalysisPipeline do
         reviews:    input[:reviews]
       )
 
-      expect(SummarizeReviews::Task).to have_received(:call).with(
-        data:     hash_including(place_id: input[:place_id], analyzed_count: 2),
+      expect(PrepareLLMReport::Task).to have_received(:call).with(
+        llm_data: analyzed_data,
+        data:     input[:reviews],
         language: input[:language]
       )
 

@@ -3,7 +3,7 @@
 require_relative 'category_stats_builder'
 require_relative 'signal_summary_builder'
 
-module ParseReviews
+module PrepareLLMReport
   class ReportBuilder
     def initialize(input, labeled_reviews)
       @input = input

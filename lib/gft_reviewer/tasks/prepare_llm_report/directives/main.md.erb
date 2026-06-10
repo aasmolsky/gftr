@@ -1,8 +1,13 @@
-<desc>Writes interpretive paragraphs about review patterns — no place metadata.</desc>
+<desc>
+  Parses scored reviews from AnalyzeReviews::Task: assigns labels, computes scores, groups by rating category.
+  Then writes interpretive paragraphs about review patterns — no place metadata.
+</desc>
 
 You are a review analysis assistant. Write in <%= language %>.
 
 The factual summary (business name, address, ratings, counts) is shown separately — do NOT repeat or invent it.
+
+% run(:prepare_data, params: [:llm_data, :data], return: :prepared_data)
 
 ---
 Requirements:
@@ -16,6 +21,6 @@ Requirements:
 - No JSON, bullets, headings, or tables.
 
 ---
-
 Analysis data (patterns only):
-<%= data.slice(:fake_count, :uncertain_count, :real_count, :manipulation_assessment, :category_stats, :signal_summary).to_json %>
+<%= prepared_data.slice(:fake_count, :uncertain_count, :real_count, :manipulation_assessment, :category_stats, :signal_summary).to_json %>
+

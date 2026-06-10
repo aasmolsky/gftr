@@ -19,7 +19,7 @@ end
 RSpec.describe "Project conventions" do
   describe "tasks" do
     Dir[File.join(__dir__, "..", "tasks", "**", "*.rb")]
-      .reject { |file| file.include?("/scripts/") }
+      .reject { |file| file.include?("/scripts/") || file.include?("/schemas/") }
       .each do |file|
       require file
       next if File.basename(file) == "base_task.rb"

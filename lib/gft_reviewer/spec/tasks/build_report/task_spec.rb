@@ -19,6 +19,8 @@ RSpec.describe BuildReport::Task do
           address: 'Test St 1'
         },
         declared_rating: 4.5,
+        manipulation_assessment: 'untrusted',
+        authenticity_score: 40,
         real_only_average_rating: 4.8,
         estimated_rating: 3.7,
         analyzed_count: 10,
@@ -26,9 +28,21 @@ RSpec.describe BuildReport::Task do
         uncertain_count: 1,
         real_count: 7,
         category_stats: {
-          positive: { count: 6, real: 4, fake: 1, uncertain: 1, avg_rating: 4.8 },
-          neutral: { count: 2, real: 2, fake: 0, uncertain: 0, avg_rating: 3.0 },
-          negative: { count: 2, real: 1, fake: 1, uncertain: 0, avg_rating: 1.5 }
+          positive: {
+            total: 4, real: 2, uncertain: 1, fake: 1,
+            genuine_percent: 50, share_percent: 80, avg_rating: 4.8,
+            manipulation_signals: 5, authenticity_signals: 5, suspicious_reviews: []
+          },
+          neutral: {
+            total: 0, real: 0, uncertain: 0, fake: 0,
+            genuine_percent: 0, share_percent: 0, avg_rating: 0.0,
+            manipulation_signals: 0, authenticity_signals: 0, suspicious_reviews: []
+          },
+          negative: {
+            total: 1, real: 0, uncertain: 0, fake: 1,
+            genuine_percent: 0, share_percent: 20, avg_rating: 1.0,
+            manipulation_signals: 1, authenticity_signals: 0, suspicious_reviews: []
+          }
         },
         signal_summary: {
           GENERIC_TEXT: 4,

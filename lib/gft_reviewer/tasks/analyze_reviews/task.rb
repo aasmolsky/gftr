@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-require_relative "output_schema"
+require_relative "llm_schemas/output_schema"
 
 module AnalyzeReviews
   MAX_REVIEWS  = 12
@@ -9,18 +9,18 @@ module AnalyzeReviews
     schema do
       param :place_id,   type: String, required: true
       param :language,   type: String, required: true
+      param :reviews, type: Array, required: true
       param :place_data, type: Hash,   required: true do
         required(:title).filled(:string)
         required(:rating).filled(:float)
         required(:reviews_count).filled(:integer)
         required(:address).filled(:string)
       end
-      param :reviews,    type: Array,  required: true
 
       use :review_scores
       use :review_patterns
 
-      output OutputSchema, validate: :validate_response!, retries: 0
+      output LLMSchemas::OutputSchema, validate: :validate_response!, retries: 0
     end
 
     private

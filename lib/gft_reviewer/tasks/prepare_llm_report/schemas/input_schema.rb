@@ -2,7 +2,7 @@
 
 require "dry/schema"
 
-module ParseReviews
+module PrepareLLMReport
   module Schemas
     InputSchema = Dry::Schema.define do
       required(:place_id).filled(:string)

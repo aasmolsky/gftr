@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-module ParseReviews
+module PrepareLLMReport
   FAKE_THRESHOLD = 40
   UNCERTAIN_THRESHOLD = 20
 

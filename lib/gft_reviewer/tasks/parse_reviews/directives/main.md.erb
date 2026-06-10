@@ -1,8 +1,0 @@
-<desc>
-  Parses scored reviews from AnalyzeReviews::Task: assigns labels, computes scores, groups by rating category.
-  No LLM — pure script.
-</desc>
-
-% run(:parse, params: [:llm_response, :source_reviews], return: :parsed)
-
-<%= parsed.to_json %>

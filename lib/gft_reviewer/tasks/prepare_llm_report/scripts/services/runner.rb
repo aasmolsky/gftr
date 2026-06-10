@@ -5,7 +5,7 @@ require_relative 'snippet_enricher'
 require_relative 'review_labeler'
 require_relative 'report_builder'
 
-module ParseReviews
+module PrepareLLMReport
   class Runner
     def self.call(payload)
       new(payload).call

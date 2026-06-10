@@ -3,7 +3,7 @@
 require_relative 'constants'
 require_relative 'signal_presenter'
 
-module ParseReviews
+module PrepareLLMReport
   class CategoryStatsBuilder
     def initialize(labeled_reviews, language:)
       @labeled_reviews = labeled_reviews

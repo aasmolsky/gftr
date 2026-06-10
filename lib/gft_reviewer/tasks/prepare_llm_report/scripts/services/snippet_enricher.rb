@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-module ParseReviews
+module PrepareLLMReport
   class SnippetEnricher
     def initialize(processed_reviews, source_reviews)
       @processed_reviews = Array(processed_reviews)

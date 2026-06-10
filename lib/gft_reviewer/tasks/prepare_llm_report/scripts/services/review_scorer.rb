@@ -2,7 +2,7 @@
 
 require_relative 'constants'
 
-module ParseReviews
+module PrepareLLMReport
   class ReviewScorer
     def initialize(review)
       @review = review
