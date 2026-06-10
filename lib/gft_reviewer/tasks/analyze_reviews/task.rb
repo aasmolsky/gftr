@@ -3,7 +3,7 @@
 require_relative "output_schema"
 
 module AnalyzeReviews
-  MAX_REVIEWS  = 25
+  MAX_REVIEWS  = 12
 
   class Task < BaseTask
     schema do
