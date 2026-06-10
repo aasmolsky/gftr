@@ -14,7 +14,7 @@ module GftReviewer
 
       report_data, llm_report = PrepareLLMReport::Task.call(
         llm_data: llm_analyzed_data,
-        data:     { place_data: input[:place_data], reviews: input[:reviews] },
+        data:     { place_id: input[:place_id], language: input[:language], place_data: input[:place_data], reviews: input[:reviews] },
         language: input[:language]
       )
 

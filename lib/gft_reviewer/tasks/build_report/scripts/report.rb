@@ -5,7 +5,7 @@
 # desc: Combines parsed review data with the LLM summary into the final report JSON
 
 require 'json'
-require_relative 'key_conclusions_composer'
+require_relative 'services/key_conclusions_composer'
 
 payload = JSON.parse($stdin.read, symbolize_names: true)
 input = payload[:input] || payload

@@ -18,16 +18,6 @@ module AnalyzeReviews
     end
 
     class OutputSchema < RubyLLM::Schema
-      string :place_id
-      string :language
-
-      object :place_data do
-        string  :title
-        number  :rating
-        integer :reviews_count
-        string  :address
-      end
-
       array :processed_reviews, of: ProcessedReviewSchema
     end
   end

@@ -5,15 +5,7 @@ require "dry/schema"
 module PrepareLLMReport
   module Schemas
     InputSchema = Dry::Schema.define do
-      required(:place_id).filled(:string)
-      required(:language).filled(:string)
-      required(:place_data).hash do
-        optional(:title).maybe(:string)
-        required(:rating).filled(:float)
-        required(:reviews_count).filled(:integer)
-        optional(:address).maybe(:string)
-      end
-      required(:processed_reviews).maybe(:array)
+      required(:processed_reviews).filled(:array)
     end
   end
 end

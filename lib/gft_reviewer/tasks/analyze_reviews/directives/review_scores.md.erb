@@ -47,46 +47,42 @@ The example below shows the structure only. Any key from the scoring table above
 
 ## Scoring table
 
-Use the criteria reference for descriptions of each key.
-
 ### Fake signals — add points
 
-| Key                    | Points | Check                                                                                                                                                                                                                                                                                                               |
-|------------------------|--------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `THIN_ACCOUNT_0`       | +20    | author_reviews_count ≤ 1?                                                                                                                                                                                                                                                                                           |
-| `THIN_ACCOUNT_1`       | +10    | author_reviews_count 2–3?                                                                                                                                                                                                                                                                                           |
-| `SHORT_TEXT_EXTREME`   | +25    | snippet_length < 20?                                                                                                                                                                                                                                                                                                |
-| `SHORT_TEXT`           | +10    | snippet_length < 40?                                                                                                                                                                                                                                                                                                |
-| `BURST_AFTER_NEGATIVE` | +20    | Is this 5★ review within 5 positions after a 1–2★ review in the list?                                                                                                                                                                                                                                               |
-| `FIVE_STAR_EMPTY`      | +15    | rating = 5 AND snippet_length < 50?                                                                                                                                                                                                                                                                                 |
-| `SURNAME_REPEAT`       | +20    | Does another reviewer in this set share the same last name?                                                                                                                                                                                                                                                         |
-| `GENERIC_TEXT`         | +20    | After reading the snippet, can you answer at least ONE of: (a) exactly what service/product/repair was performed — not vague words like "service", "everything", "defects", "quality"; (b) an exact price; (c) an exact wait time; (d) a staff member's name; (e) a specific physical detail? If you cannot → apply |
-| `SUSPICIOUS_NEGATIVE`  | +20    | rating 1–2 AND (author thin OR text short OR no specific incident described)?                                                                                                                                                                                                                                       |
-| `MARKETING_TONE`       | +10    | Does the text read like an ad — superlatives, emotional filler, "best ever", "world-class"?                                                                                                                                                                                                                         |
-| `ALL_POSITIVE`         | +15    | Read every sentence. Is there zero negative words, zero caveats ("but", "however", "though", "хотя", "но"), and zero neutral observations? Even one mild criticism disqualifies. If purely positive throughout → apply                                                                                              |
-| `NO_FIRST_PERSON`      | +5     | Is there no "I / me / my / we / our / я / мне / мой / мы / наш" anywhere in the text?                                                                                                                                                                                                                               |
-| `FUTURE_PROMISE`       | +5     | Does the text promise to return or recommend without describing what actually happened?                                                                                                                                                                                                                             |
-| `BUSINESS_NAME_DROP`   | +10    | Does the text contain the actual business name from place_data (not "this place", "here", or pronouns)?                                                                                                                                                                                                             |
-| `EMOJI_SPAM`           | +10    | Excessive emoji or !!!-punctuation with no informational content?                                                                                                                                                                                                                                                   |
-| `TEMPLATE_CLONE`       | +20    | Is the phrasing nearly identical to another review in this set?                                                                                                                                                                                                                                                     |
-| `REPEATABLE_PLUSES_2`  | +5     | Count distinct praise phrases ("great", "amazing", "excellent", "highly recommend", "вежливые", "отличное", "wonderful", etc.). Are there exactly 2?                                                                                                                                                                |
-| `REPEATABLE_PLUSES_3`  | +5     | Count distinct praise phrases. Are there 3 or more? (Stacks with REPEATABLE_PLUSES_2 → +10 total for 3+)                                                                                                                                                                                                            |
+| Key                    | Points | Description | Check |
+|------------------------|--------|-------------|-------|
+| `THIN_ACCOUNT_0`       | +20    | Author has 0–1 total reviews on Google Maps | author_reviews_count ≤ 1? |
+| `THIN_ACCOUNT_1`       | +10    | Author has 2–3 total reviews on Google Maps | author_reviews_count 2–3? |
+| `SHORT_TEXT_EXTREME`   | +25    | Review text under 20 characters | snippet_length < 20? |
+| `SHORT_TEXT`           | +10    | Review text under 40 characters | snippet_length < 40? |
+| `BURST_AFTER_NEGATIVE` | +20    | 5★ review within 5 positions after a 1–2★ review | Is this 5★ review within 5 positions after a 1–2★ review in the list? |
+| `FIVE_STAR_EMPTY`      | +15    | 5★ rating with text under 50 characters | rating = 5 AND snippet_length < 50? |
+| `SURNAME_REPEAT`       | +20    | Reviewer shares last name with another reviewer in the same set | Does another reviewer in this set share the same last name? |
+| `GENERIC_TEXT`         | +20    | **Absence of specifics** — no repair type, no product, no price, no staff name, no waiting time, no concrete situation described. The review could have been written by someone who was never there. | After reading the snippet, can you answer at least ONE of: (a) exactly what service/product/repair was performed; (b) an exact price; (c) an exact wait time; (d) a staff member's name; (e) a specific physical detail? If you cannot → apply |
+| `SUSPICIOUS_NEGATIVE`  | +20    | 1–2★ review combined with thin account, short text, or generic content | rating 1–2 AND (author thin OR text short OR no specific incident described)? |
+| `MARKETING_TONE`       | +10    | **Promotional or exaggerated language** — superlatives, emotional filler: "best ever", "incredible", "world-class". The review sounds like an ad. | Does the text read like an ad — superlatives, emotional filler, "best ever", "world-class"? |
+| `ALL_POSITIVE`         | +15    | **Only positives, zero negatives or caveats** — nothing but praise with no minor criticism, no nuance, no "but". | Read every sentence. Is there zero negative words, zero caveats ("but", "however", "though", "хотя", "но"), and zero neutral observations? Even one mild criticism disqualifies. |
+| `NO_FIRST_PERSON`      | +5     | **No first-person voice** — no "I", "me", "my", "we", "я", "мы", "мне". Written from the outside, not as a personal experience. | Is there no "I / me / my / we / our / я / мне / мой / мы / наш" anywhere in the text? |
+| `FUTURE_PROMISE`       | +5     | **Future promise without past detail** — "will return", "теперь только сюда" without describing what happened. | Does the text promise to return or recommend without describing what actually happened? |
+| `BUSINESS_NAME_DROP`   | +10    | **Explicitly names the business in the review text**. Real reviewers rarely type the full business name. | Does the text contain the actual business name from place_data (not "this place", "here", or pronouns)? |
+| `EMOJI_SPAM`           | +10    | Excessive punctuation or decorative emoji with no informational content | Excessive emoji or !!!-punctuation with no informational content? |
+| `TEMPLATE_CLONE`       | +20    | Phrasing nearly identical to another review in the same set | Is the phrasing nearly identical to another review in this set? |
+| `REPEATABLE_PLUSES_2`  | +5     | **Exactly 2 distinct praise phrases** in one review. Stacked praise without substance. | Count distinct praise phrases. Are there exactly 2? |
+| `REPEATABLE_PLUSES_3`  | +5     | **3 or more distinct praise phrases** in one review. Stacks with REPEATABLE_PLUSES_2 (+10 total). | Count distinct praise phrases. Are there 3 or more? |
 
 ### Real signals — subtract points
 
-| Key                     | Points | Check |
-|-------------------------|--------|-------|
-| `EDITED_REVIEW`         | −5     | was_edited = true? |
-| `HAS_PHOTOS`            | −10    | images_count > 0? |
-| `EXPERIENCED_AUTHOR_5`  | −5     | author_reviews_count ≥ 5? |
-| `EXPERIENCED_AUTHOR_10` | −10    | author_reviews_count ≥ 10? |
-| `ACTIVE_PROFILE`        | −5     | author_photos_count > 5? |
-| `LONG_TEXT`             | −10    | snippet_length > 400? |
-| `SPECIFIC_DETAILS`      | −10    | Does the text mention a specific person's name, an exact price amount, an exact duration, a specific part/product name, or a concrete physical description? Generic words like "service", "defects", "quality", "everything", "обслуживание", "дефекты" do NOT count. |
-| `BALANCED_TONE`         | −10    | Does the text include both positives and at least one negative or caveat? |
-| `NATURAL_LANGUAGE`      | −10    | Does the text have typos, informal phrasing, or a personal voice? |
-| `LOCAL_GUIDE`           | −3     | is_local_guide = true? |
-| `OWNER_RESPONDED`       | −3     | response_present = true? |
-| `HELPFUL_VOTES`         | −10    | likes > 0? |
-
-Apply this scoring to every review. Include `score_breakdown` (keys from the table above) for each.
+| Key                     | Points | Description | Check |
+|-------------------------|--------|-------------|-------|
+| `EDITED_REVIEW`         | −5     | Review was edited after initial posting | was_edited = true? |
+| `HAS_PHOTOS`            | −10    | Review includes attached photos | images_count > 0? |
+| `EXPERIENCED_AUTHOR_5`  | −5     | Author has more than 5 reviews on Google Maps | author_reviews_count ≥ 5? |
+| `EXPERIENCED_AUTHOR_10` | −10    | Author has more than 10 reviews on Google Maps | author_reviews_count ≥ 10? |
+| `ACTIVE_PROFILE`        | −5     | Author has uploaded more than 5 photos to Google Maps | author_photos_count > 5? |
+| `LONG_TEXT`             | −10    | Review text over 400 characters | snippet_length > 400? |
+| `SPECIFIC_DETAILS`      | −10    | Mentions specific names, prices, waiting times, or physical details | Does the text mention a specific person's name, an exact price amount, an exact duration, a specific part/product name, or a concrete physical description? Generic words like "service", "defects", "quality", "everything" do NOT count. |
+| `BALANCED_TONE`         | −10    | Review notes both positives and negatives or caveats | Does the text include both positives and at least one negative or caveat? |
+| `NATURAL_LANGUAGE`      | −10    | Informal language, typos, colloquialisms, personal voice | Does the text have typos, informal phrasing, or a personal voice? |
+| `LOCAL_GUIDE`           | −3     | Author is a Google-verified Local Guide | is_local_guide = true? |
+| `OWNER_RESPONDED`       | −3     | The business owner replied to this review | response_present = true? |
+| `HELPFUL_VOTES`         | −10    | Other users marked this review as helpful | likes > 0? |

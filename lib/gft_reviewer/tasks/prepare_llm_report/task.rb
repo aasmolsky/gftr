@@ -8,10 +8,14 @@ module PrepareLLMReport
     schema do
       param :language, type: String, required: true
       param :data, type: Hash, required: true do
+        required(:place_id).filled(:string)
+        required(:language).filled(:string)
         required(:place_data).filled(:hash)
         required(:reviews).maybe(:array)
       end
       param :llm_data, type: Hash, validate: PrepareLLMReport::Schemas::InputSchema
+
+      use :signal_reference
 
       run :prepare_data do
         input type: Hash do
