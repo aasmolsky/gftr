@@ -46,7 +46,13 @@ RSpec.describe GftReviewer::ReviewAnalysisPipeline do
         fake_count:              1,
         uncertain_count:         0,
         real_count:              1,
-        category_stats:          { positive: { total: 2, real: 1, fake: 1 }, neutral: { total: 0 }, negative: { total: 0 } },
+        category_stats:          CategoryStatsFixture.build(
+          positive: {
+            total: 2, real: 1, uncertain: 0, fake: 1,
+            genuine_percent: 50, share_percent: 100, avg_rating: 4.5,
+            manipulation_signals: 1, authenticity_signals: 0, suspicious_reviews: []
+          }
+        ),
         signal_summary:          { GENERIC_TEXT: 1, SHORT_TEXT: 1 }
       }
     end
@@ -76,7 +82,12 @@ RSpec.describe GftReviewer::ReviewAnalysisPipeline do
 
       expect(PrepareLLMReport::Task).to have_received(:call).with(
         llm_data: analyzed_data,
-        data:     input[:reviews],
+        data:     {
+          place_id:   input[:place_id],
+          language:   input[:language],
+          place_data: input[:place_data],
+          reviews:    input[:reviews]
+        },
         language: input[:language]
       )
 

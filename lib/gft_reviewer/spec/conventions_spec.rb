@@ -8,7 +8,11 @@ end
 
 def task_constant_name(file)
   task_dir = File.basename(File.dirname(file))
-  "#{camelize(task_dir)}::Task"
+  name = case task_dir
+         when "prepare_llm_report" then "PrepareLLMReport"
+         else camelize(task_dir)
+         end
+  "#{name}::Task"
 end
 
 def pipeline_constant_name(file)
@@ -19,7 +23,7 @@ end
 RSpec.describe "Project conventions" do
   describe "tasks" do
     Dir[File.join(__dir__, "..", "tasks", "**", "*.rb")]
-      .reject { |file| file.include?("/scripts/") || file.include?("/schemas/") }
+      .reject { |file| file.include?("/scripts/") || file.include?("/schemas/") || file.include?("/llm_schemas/") }
       .each do |file|
       require file
       next if File.basename(file) == "base_task.rb"

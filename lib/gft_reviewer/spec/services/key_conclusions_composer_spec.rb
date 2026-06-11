@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 require_relative "../spec_helper"
-require_relative "../../tasks/build_report/scripts/key_conclusions_composer"
+require_relative "../../tasks/build_report/scripts/services/key_conclusions_composer"
 
 RSpec.describe GftReviewer::KeyConclusionsComposer do
   let(:data) do

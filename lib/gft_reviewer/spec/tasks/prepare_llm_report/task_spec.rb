@@ -15,6 +15,17 @@ require_relative '../../spec_helper'
 # ---------------------------------------------------------------------------
 RSpec.describe PrepareLLMReport::Task do
   describe '.call' do
+    let(:place_data) { { title: 'Test Garage', rating: 4.5, reviews_count: 5, address: 'Test St 1' } }
+
+    let(:source_data) do
+      {
+        place_id:   'ChIJtest123',
+        language:   'en',
+        place_data: place_data,
+        reviews:    []
+      }
+    end
+
     subject(:result) do
       described_class.call(
         llm_data: {
@@ -23,12 +34,10 @@ RSpec.describe PrepareLLMReport::Task do
           place_data:        { title: 'Wrong Title', rating: 1.0, reviews_count: 1, address: 'Fake St' },
           processed_reviews: reviews
         },
-        data: [],
+        data:     source_data,
         language: 'en'
       )
     end
-
-    let(:place_data) { { title: 'Test Garage', rating: 4.5, reviews_count: 5, address: 'Test St 1' } }
     let(:reviews) do
       [
         {
@@ -69,7 +78,7 @@ RSpec.describe PrepareLLMReport::Task do
       it 'returns top-level metadata', :aggregate_failures do
         expect(report[:place_id]).to eq('ChIJtest123')
         expect(report[:language]).to eq('en')
-        expect(report[:declared_rating]).to eq(1.0)
+        expect(report[:declared_rating]).to eq(4.5)
         expect(report[:analyzed_count]).to eq(5)
       end
 
@@ -185,9 +194,14 @@ RSpec.describe PrepareLLMReport::Task do
               }
             ]
           },
-          data: [
-            { review_id: 'r1', snippet: 'Very detailed review text from SerpAPI' }
-          ],
+          data: {
+            place_id:   'ChIJtest123',
+            language:   'en',
+            place_data: place_data,
+            reviews:    [
+              { review_id: 'r1', snippet: 'Very detailed review text from SerpAPI' }
+            ]
+          },
           language: 'en'
         )
         report_data
@@ -200,7 +214,7 @@ RSpec.describe PrepareLLMReport::Task do
       end
     end
 
-    context 'when input is a structured Hash from AnalyzeReviews' do
+    context 'when source data is a structured Hash from SerpAPI' do
       subject(:report) do
         report_data, _llm_report = described_class.call(
           llm_data: {
@@ -209,14 +223,16 @@ RSpec.describe PrepareLLMReport::Task do
             place_data:        { title: 'Wrong', rating: 0.0, reviews_count: 0, address: 'Wrong' },
             processed_reviews: reviews
           },
-          data: [],
+          data:     source_data,
           language: 'en'
         )
         report_data
       end
 
-      it 'parses without string coercion' do
+      it 'uses source place_data for declared_rating, not llm_data' do
         expect(report[:analyzed_count]).to eq(5)
+        expect(report[:declared_rating]).to eq(4.5)
+        expect(report[:place_data][:title]).to eq('Test Garage')
       end
     end
 
@@ -236,7 +252,12 @@ RSpec.describe PrepareLLMReport::Task do
               }
             ]
           },
-          data: [],
+          data: {
+            place_id:   'ChIJtest123',
+            language:   'ru',
+            place_data: { title: 'Test Garage', rating: 4.5, reviews_count: 1, address: 'Test St 1' },
+            reviews:    []
+          },
           language: 'ru'
         )
 
