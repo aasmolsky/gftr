@@ -17,8 +17,10 @@ module AnalyzeReviews
         required(:address).filled(:string)
       end
 
-      use :review_scores
-      use :review_patterns
+      directive :task do
+        use :review_scores
+        use :review_patterns
+      end
 
       output LLMSchemas::OutputSchema, validate: :validate_response!, retries: 0
     end

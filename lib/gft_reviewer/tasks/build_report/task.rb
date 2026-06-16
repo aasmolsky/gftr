@@ -12,9 +12,11 @@ module BuildReport
       param :data, type: Hash, validate: BuildReport::Schemas::DataSchema
       param :llm_data, type: String, required: true
 
-      run :report do
-        input type: Hash, validate: BuildReport::Schemas::ReportInputSchema
-        returns :report, validate: BuildReport::Schemas::ReportSchema
+      directive :task do
+        run :report do
+          input type: Hash, validate: BuildReport::Schemas::ReportInputSchema
+          returns :report, validate: BuildReport::Schemas::ReportSchema
+        end
       end
 
       output Hash

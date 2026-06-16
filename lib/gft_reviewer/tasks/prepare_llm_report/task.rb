@@ -15,14 +15,16 @@ module PrepareLLMReport
       end
       param :llm_data, type: Hash, validate: PrepareLLMReport::Schemas::InputSchema
 
-      use :signal_reference
+      directive :task do
+        use :signal_reference
 
-      run :prepare_data do
-        input type: Hash do
-          required(:llm_data).filled(:hash)
-          required(:data).filled(:hash)
+        run :prepare_data do
+          input type: Hash do
+            required(:llm_data).filled(:hash)
+            required(:data).filled(:hash)
+          end
+          returns :prepared_data, validate: PrepareLLMReport::Schemas::PreparedDataSchema
         end
-        returns :prepared_data, validate: PrepareLLMReport::Schemas::PreparedDataSchema
       end
 
       output :text

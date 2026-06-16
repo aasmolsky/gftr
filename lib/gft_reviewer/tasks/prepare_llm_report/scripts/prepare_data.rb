@@ -1,12 +1,8 @@
 # frozen_string_literal: true
-
-#!/usr/bin/env ruby
-# frozen_string_literal: true
 # desc: Parses scored reviews from AnalyzeReviews::Task and returns computed review report JSON
 
-require 'json'
-require_relative 'services/runner'
-payload = JSON.parse($stdin.read, symbolize_names: true)
-parsed = PrepareLLMReport::Runner.call(payload)
+require_relative "services/runner"
 
-puts JSON.generate(prepared_data: parsed)
+def call(input)
+  { prepared_data: PrepareLLMReport::Runner.call(input) }
+end

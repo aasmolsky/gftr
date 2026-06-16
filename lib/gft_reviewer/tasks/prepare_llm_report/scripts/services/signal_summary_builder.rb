@@ -19,7 +19,7 @@ module PrepareLLMReport
 
       labeled_reviews.each do |review|
         (review[:score_breakdown] || {}).each_key do |signal_key|
-          counts[signal_key.to_s] += 1
+          counts[signal_key.to_sym] += 1
         end
       end
 
